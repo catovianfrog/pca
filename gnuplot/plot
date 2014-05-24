@@ -1,0 +1,10 @@
+#--- Correlations Circle -------
+set view equal xy
+set size square
+set title "Cercle des Correlations"
+set object  circle at  0,0 size 0.7 fc rgb "green"
+set object  circle at  0,0 size 1 fc rgb "navy"
+plot [-1:1] [-1:1] [-1:1] "cercle" using 2:3:1 title "" with labels font "Times,8" 
+
+
+
