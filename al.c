@@ -42,10 +42,19 @@ double	    matrix_lower_residue(const t_matrix *M);
 t_matrix*   matrix_get_vector(const t_matrix *M, const int n);
 int	    matrix_set_vector(t_matrix *M,const int n, const t_matrix *V);
 int	    matrix_qr_decomp(t_matrix *A, t_matrix *Q, t_matrix *R);
-int	    syslinQR(t_matrix *A, t_matrix *X, t_matrix *B) ;
-int	    syslinGauss(t_matrix const *A, t_matrix *X, t_matrix const *B) ;
+int	    syslinQR(t_matrix *A, t_matrix *X, t_matrix *B);
+int	    syslinGauss(t_matrix const *A, t_matrix *X, t_matrix const *B);
+
+//--------- basic statistics functions  ----------------------------------------
 double	    sign(double x);
+double	    mean(t_matrix *V);
+double	    sumsquares(t_matrix *V);
+double	    variance(t_matrix *V);
+double	    sdev(t_matrix *V);
+double	    variance_sample(t_matrix *V);
+double	    sdev_sample(t_matrix *V);
 //------------------------------------------------------------------------------
+
 
 /**********************************************************************
  *  matrix_new: returns a new matrix, or NULL if not enough memory
@@ -536,6 +545,51 @@ double	    sign(double x) {
     if(x<0)  return (double)-1;
 	     return (double) 1;
 }
+/**********************************************************************
+ * BASIC STATISTICAL FUNCTIONS
+ * mean, sumsquares, variance, sdev, variance_sample, sdev_sample
+ *
+ *  these functions have a t_matrix (vcector) as argument, and return 
+ *  a real double value
+ **********************************************************************/
+double mean(t_matrix *V){
+    int	    i,n;
+    double  s=0;
+    n = V->nrows * V->ncols;
+    if(n==0) return 0;
+    for(i=0;i<n;i++) s+=V->data[i];
+    return s/n;
+}
+double sumsquares(t_matrix *V) {
+    int	    i,n;
+    double  s=0;
+    n = V->nrows * V->ncols;
+    if(n==0) return 0;
+    for(i=0;i<n;i++) s+=V->data[i]*V->data[i];
+    return s;
+}
+double variance(t_matrix *V) {
+    int	    n;
+    double  m;
+    n = V->nrows * V->ncols;
+    if(n==0) return 0;
+    m=mean(V);
+    return sumsquares(V)/n - m*m;
+}
+double sdev(t_matrix *V) {
+    return sqrt(variance(V));
+}
+double variance_sample(t_matrix *V) {
+    int	    n;
+    n = V->nrows * V->ncols;
+    if(n<2) return NAN;
+    return variance(V)*n/(n-1);
+}
+double sdev_sample(t_matrix *V) {
+    return sqrt(variance_sample(V));
+}
+ 
+ 
 
 /**********************************************************************
  * 			    
@@ -563,6 +617,15 @@ int main(int argc, char *argv[]) {
     
     matrix_assign(A,m);
     matrix_assign(B,b);
+
+    printf("mean: %f\n", mean(B));
+    printf("variance: %f\n", variance(B));
+    printf("sumsquares: %f\n", sumsquares(B));
+    printf("sdev: %f\n", sdev(B));
+    printf("variance_sample: %f\n", variance_sample(B));
+  printf("sdev_sample: %f\n", sdev_sample(B));
+
+
     syslinQR(A,X,B);
     syslinGauss(A,X,B);
     matrix_print(stdout,A,"A");
