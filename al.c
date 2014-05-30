@@ -7,8 +7,6 @@
 #define PRECISION      1e-6	    // stop iterations when residue < PRECISION
 #define LINE_LENGTH    1000	    // max length of data file lines
 #define NAME_LENGTH    255	    // length of strings & labels
-#define MAX_LINES      350	    // max number of observations (individus)
-#define MAX_COLS       MAX_LINES    // max number of parameters
 //*********************************************************************
 typedef	struct  {   int	    nrows;
 		    int	    ncols;
@@ -17,17 +15,18 @@ typedef	struct  {   int	    nrows;
  * TODO
  *	    - reset relevant function parameters as 'const'
  **********************************************************************/
-const double	g_precision=PRECISION;
+const double	g_precision	=   PRECISION;
+const double	g_max_iterations=   MAX_ITERATION;
 
 //---------- Functions prototypes ----------------------------------------------
 t_matrix*   matrix_new(int nrows, int ncols);
 void	    matrix_free(t_matrix *m);
 t_matrix*   matrix_new_vector(int n, void *p);
-inline double matrix_get(t_matrix *M, int i, int j); // body must be in header
+inline double matrix_get(const t_matrix *M, int i, int j); // body must be in header
 inline int  matrix_set(t_matrix *M, const int i, const int j, const double r);
 void	    matrix_assign(t_matrix *m, void *p); 
-void	    matrix_printf(FILE *f, t_matrix *M, char* format, char* msg);
-void	    matrix_print(FILE *f, t_matrix *m, char* msg);
+void	    matrix_printf(FILE *f, const t_matrix *M, char* format, char* msg);
+void	    matrix_print(FILE *f, const t_matrix *m, char* msg);
 t_matrix*   matrix_prod(const t_matrix *A, const t_matrix *B);
 t_matrix*   matrix_add(const t_matrix *A, const t_matrix *B, const double scale);
 t_matrix*   matrix_copy(const t_matrix *M);
@@ -36,12 +35,18 @@ t_matrix*   matrix_scale(const t_matrix *M, const double scalar);
 t_matrix*   matrix_Id(const int nrows, const int ncols);
 t_matrix*   matrix_transpose(const t_matrix *M);
 double	    matrix_norm(const t_matrix *M);
-t_matrix*   matrix_normalize(t_matrix *M);
+t_matrix*   matrix_normalize(const t_matrix *M);
 double	    matrix_trace(const t_matrix* M);
 double	    matrix_lower_residue(const t_matrix *M);
 t_matrix*   matrix_get_vector(const t_matrix *M, const int n);
 int	    matrix_set_vector(t_matrix *M,const int n, const t_matrix *V);
+t_matrix*   matrix_get_block(const t_matrix *M,int n,int m,int i0,int j0);
+int         matrix_set_block(const t_matrix *S,t_matrix *D,int i0,int j0);
 int	    matrix_qr_decomp(t_matrix *A, t_matrix *Q, t_matrix *R);
+int	    matrix_eigenvalues(const t_matrix *A, t_matrix *EV, double precision);
+t_matrix*   matrix_ev_inertia(const t_matrix *eigenvalues);
+t_matrix*   matrix_eigenvector(const t_matrix *M, const double r);
+t_matrix*   matrix_eigenvectors(const t_matrix *M, const t_matrix *e_values);
 int	    syslinQR(t_matrix *A, t_matrix *X, t_matrix *B);
 int	    syslinGauss(t_matrix const *A, t_matrix *X, t_matrix const *B);
 
@@ -99,7 +104,7 @@ inline int matrix_set(t_matrix *M, const int i, const int j, const double r) {
 /**********************************************************************
  * matrix_get: aij = matrix_get(M,i,j);
  **********************************************************************/
-inline double matrix_get(t_matrix *M, int i, int j) {
+inline double matrix_get(const t_matrix *M, int i, int j) {
     if(i>=M->nrows || j>=M->ncols) return nan("");
     return M->data[i*M->ncols+j];
 }
@@ -117,12 +122,23 @@ void	matrix_assign(t_matrix *m, void *p) {
  *   string for a doubleprecision real. If 'format' is empty or invalid,
  *   default numbers printout format is "% 8.2g\t"
  **********************************************************************/
-void matrix_printf(FILE *f, t_matrix *M, char* format, char* msg) {
-    int	    i,j;
-    char    teststr[50];
-    //char    form[20]="% 8.2g";
-    char    form[20]="% 9.3f";
-    char    *spacer=" __________________________ ";
+void matrix_printf(FILE *f, const t_matrix *M, char* format, char* msg) {
+    int		i,j;
+    const int	spacerlen=80;   // length of specer
+    const int	msglen=30;	// max length of msg
+    int		middlepos;	// position in the middle of the spacer
+    char	teststr[50];
+    //char	form[20]="% 8.2g";
+    //char	form[20]="% 9.3g";
+    char	form[20]="% 9.3f";
+    char	spacer[spacerlen];
+    
+    // pads the spacer with underscores and write msg in the middle
+    memset(spacer,'_',spacerlen);
+    spacer[spacerlen]='\0';
+    if(strlen(msg)>msglen) msg[msglen]='\0';
+    middlepos=(spacerlen-strlen(msg))/2;
+    memcpy(&spacer[middlepos],msg,strlen(msg));
 
     //To check validity of the format, use snprintf to compute the result
     //in teststr, and then test the code returned by snprintf is positive
@@ -130,10 +146,10 @@ void matrix_printf(FILE *f, t_matrix *M, char* format, char* msg) {
 	strncpy(form, format, sizeof(form)-1);
     }
     strcat(form, "\t");
-    fprintf(f,"%s%.12s%s\n",spacer,msg,spacer);
+    fprintf(f,"%s\n",spacer);
     for(i=0;i<M->nrows;i++) {
 	for(j=0;j<M->ncols;j++) {
-	    printf(form,matrix_get(M,i,j));
+	    printf(form,M->data[i*M->ncols+j]);
 	}
 	printf("\n");
     }
@@ -143,7 +159,7 @@ void matrix_printf(FILE *f, t_matrix *M, char* format, char* msg) {
  *   prints out the matrix with message 'msg' as header line
  *   Numbers printout format is "% 8.2g\t"
  **********************************************************************/
-void matrix_print(FILE *f, t_matrix *m, char* msg) {
+void matrix_print(FILE *f, const t_matrix *m, char* msg) {
     matrix_printf(f,m,"",msg);
 }
 /**********************************************************************
@@ -280,7 +296,7 @@ double	matrix_norm(const t_matrix *M) {
 /**********************************************************************
  * matrix_normalize: normalize the argument matrix or vector
  **********************************************************************/
-t_matrix    *matrix_normalize(t_matrix *M) {
+t_matrix    *matrix_normalize(const t_matrix *M) {
     double	norm;
     norm=matrix_norm(M);
     if(norm == 0) return NULL;
@@ -338,6 +354,47 @@ int	matrix_set_vector(t_matrix *M,const int n, const t_matrix *V) {
     }
     return 0;
 }
+/**********************************************************************
+ * matrix_get_block: returns the sub-matrix of size n,m located at i0,j0
+ **********************************************************************/
+t_matrix*   matrix_get_block(const t_matrix *M,int n,int m,int i0,int j0) {
+    t_matrix    *block;
+    int		i,j;
+
+    if(i0>M->nrows-1 || j0>M->ncols-1) return NULL; // outside matrix M
+    block=matrix_new(n,m);
+    if(block == NULL){
+	    fprintf(stderr,"Error: not enough memoy in 'matrix_get_block'. Abort\n");
+	    exit(16);
+    }
+    for(i=0;i<n && (i+i0) < M->nrows; i++) {
+	    for(j=0;j<m && (j+j0) < M->ncols; j++) {
+		    block->data[i*m + j]=M->data[(i0+i)*M->ncols + j0+j];
+	    }
+    }
+    return block;
+}
+/**********************************************************************
+ * matrix_set_block: copies matrix Source into block at position i0,j0,
+ *                   of matrix Dest. Does not overwrite past the
+ *                   dimensions of Dest. Returns the number of values
+ *                   written, or zero if error;
+ **********************************************************************/
+int   matrix_set_block(const t_matrix *S,t_matrix *D,int i0,int j0) {
+    int		i,j;
+    int		n_written;
+                          
+    n_written=0;
+    if(i0>D->nrows-1 || j0>D->ncols-1) return n_written; // outside matrix Dest
+    for(i=0;i<S->nrows && (i+i0) < D->nrows; i++) {
+	    for(j=0;j<S->ncols && (j+j0) < D->ncols; j++) {
+		    D->data[(i0+i)*D->ncols + j0+j]=S->data[i*S->ncols+j];
+		    n_written+=1;
+	    }
+    }
+    return n_written;
+}
+
 /**********************************************************************
  * matrix_qr_decomp: decompose matrix A into Q & R such as A=QR using
  *		     householder elimination method
@@ -537,6 +594,152 @@ int syslinGauss(t_matrix const *A, t_matrix *X, t_matrix const *B) {
     matrix_free(M);
     return 0;           
 }                   
+
+/**********************************************************************
+ * matrix_eigenvalues:	calculates eigenvalues using QR algorithm
+ *		return 0 if error
+ *	    or
+ *		returns number of iterations k to reach precision
+ * ___________________________________________________________________
+ * Method: eigenvalues are the diagonal values of the limit of A(k+1)=R(k).Q(k)
+ * where R(k) and Q(k) are the QR decomposition of matrix A(k) 
+ **********************************************************************/
+int matrix_eigenvalues(const t_matrix *A, t_matrix *EV, double precision) {
+    int		n,i,k,err_code;
+    double	trace;
+    double	residue;                
+    t_matrix	*Q,*R,*Ak,*temp_mat;
+    n=A->ncols;
+    Ak=matrix_copy(A);
+    R=matrix_new(n,n);
+    Q=matrix_new(n,n);
+    if(Ak==NULL || R==NULL || Q==NULL) {
+	fprintf(stderr,"Error: not enough memory in matrix_eigenvalues. Abort\n");
+	exit(16);
+    }    
+    // Calculate lim Ak+1=RkQk
+    trace=matrix_trace(Ak);  // trace=norm
+    if(trace==0) {
+	fprintf(stderr, "Error.\tSingular matrix in 'eigenvalues'.\n");
+	return 0;}
+    residue=trace;
+    // residue= norm of bottom left triangle below the diagonal
+    // stop when residue/trace < required precision
+    for(k=0;fabs(residue/trace)>precision;k++){
+        err_code=matrix_qr_decomp(Ak,Q,R);
+        if(err_code!=0) {
+	    fprintf(stderr, "Error.\tSingular matrix in 'eigenvalues'.\n");
+	    return 0;
+	}
+	residue=matrix_lower_residue(Ak);
+	// A(k+1)=R . Q
+        temp_mat=matrix_prod(R,Q);
+	matrix_move(Ak,temp_mat);
+	matrix_free(temp_mat);
+	if(k>g_max_iterations) {
+	    k=0;
+	    // the QR algorithm doesn't converge, meaning that
+	    // some of the eigenvalues are not real. 
+	    // Returns 0 as Error code
+	    break;
+	}
+    }
+    for(i=0;i<n;i++) {
+	EV->data[i]=Ak->data[(n+1)*i];	// eigenvalue= Ak[i,i];
+    }
+    matrix_free(Ak);
+    matrix_free(R);
+    matrix_free(Q);
+    return k; // returns number of iterations
+}
+/**********************************************************************
+ * matrix_eigenvector:	calculate the eigenvector of matrix M 
+ *			for eigenvalue r
+ **********************************************************************/
+t_matrix*  matrix_eigenvector(const t_matrix *M, const double r) {
+    // MX=rX, or (M-rI)X=0 has an infinity of solutions, all colinear. 
+    // Fixing X[0]=-1, and leaving one equation out (top line of M)
+    // gives an n-1 linear system with 1 solution. Vector B is the
+    // firts column of M, starting on the second line.
+    int		i,n, err_code;
+    t_matrix	*EV, *normed_EV;	   // returned eigenvector
+    t_matrix	*N,*B,*X;  // (n-1) order matrices to resolve N.X=B
+    n=M->ncols;
+    N=matrix_get_block(M, n-1,n-1,1,1);
+    B=matrix_get_block(M, n-1,1,1,0);
+    X=matrix_new(n-1,1);
+    EV=matrix_new(n,1);
+    if(N==NULL || B==NULL || X==NULL || EV==NULL) {
+	fprintf(stderr,"Error: not enough memory in 'matrix_eigenvector'. Abort.\n");
+	exit(16);
+    }
+    for(i=0;i<n-1;i++) N->data[i*n]-=r;	// N = sub-block( M - rI )
+    //__Code below to use QR decomposition for linear system resolution
+    err_code=syslinQR(N,X,B);
+    //__Code below to use Gauss pivot linear system resolution_________
+    //  err_code=syslinGauss(N,X,B);
+    if(err_code !=0) {
+	fprintf(stderr, "Error:\tthe covariance matrix is singular, and has no Eigenvalues.\n ");
+	fprintf(stderr, "\tAt least one variable is a linear combination of others.\n");
+	fprintf(stderr, "\tEliminate correlated variables before running a PCA.\n");
+	exit(8);
+    }
+    // We assumed EV[0]=-1. In order to have a first coordinate positive
+    // we need to change the sign of all X[i]
+    EV->data[0]=1;
+    for(i=0;i<n-1;i++) EV->data[i+1]=-X->data[i];
+    normed_EV=matrix_normalize(EV);
+    matrix_free(EV);
+    matrix_free(N);
+    matrix_free(B);
+    matrix_free(X);
+    return normed_EV;
+}
+/**********************************************************************
+ * matrix_eigenvectors:	Returns the matrix of normalized eigenvectors
+ *                      of M, given eigenvalues vector e_values.
+ **********************************************************************/
+t_matrix*   matrix_eigenvectors(const t_matrix *M, const t_matrix *e_values) {
+    int       i,n;
+    t_matrix  *vector; // eigenvector
+    t_matrix  *EV;     // returned matrix of eigenvectors
+    n=M->ncols;
+    EV=matrix_new(n,n);
+    if(EV==NULL) {
+	fprintf(stderr,"Error: not enough memory in 'matrix_eigenvectors'. Abort.\n");
+	exit(16);
+    }
+    for(i=0;i<n;i++) {
+	vector=matrix_eigenvector(M, e_values->data[i]);
+	matrix_set_vector(EV,i,vector);
+	matrix_free(vector);
+    }
+    return EV;
+}
+/**********************************************************************
+ * matrix_ev_inertia: returns as a vector the inertia of the eigenvalues
+ *		      vector given as argument
+ **********************************************************************/
+t_matrix* matrix_ev_inertia(const t_matrix *eigenvalues){
+    /* N.B. The inertia is needed for Principal Component Analysis (PCA).
+     * In PCA, the matrix of covariance is symmetric and positive-definite
+     * so all eigenvalues should be positive, and the sum of eigenvalues
+     * is the order of the matrix. In the general case, eigenvalues of 
+     * a random matrix can be negative. So the inertia here is calculated
+     * using the absolute value of eigenvalues to normalize the inertia
+     * to 100%.*/
+    int	    i;
+    double    s=0;
+    t_matrix  *inertia;
+    inertia=matrix_new(eigenvalues->nrows,1);
+    if(inertia == NULL) {
+	fprintf(stderr,"Error: not enough memory in matrix_inertia. Abort\n");
+	exit(16);
+    }
+    for(i=0;i<eigenvalues->nrows;i++) s+=fabs(eigenvalues->data[i]);
+    for(i=0;i<eigenvalues->nrows;i++) inertia->data[i]=fabs(eigenvalues->data[i])/s;
+    return inertia;
+}
 /**********************************************************************
  * sign:  returns signe of x (-1, +1 or 0) as a double
  **********************************************************************/
@@ -588,52 +791,43 @@ double variance_sample(t_matrix *V) {
 double sdev_sample(t_matrix *V) {
     return sqrt(variance_sample(V));
 }
- 
- 
-
 /**********************************************************************
  * 			    
  * 			    MAIN
  *
  **********************************************************************/
 int main(int argc, char *argv[]) {
-    t_matrix	*A,*X,*B;
-    double	m[25]={-1,  3,	4,  2,	2,
-			2,  1,	1,  1,	0,
-			-4, 4,	0,  -5,	5,
+    t_matrix	*A,*X, *EV, *inertia;
+    double	m[25]={-1,  3,	4,  -3,	-1,
+			3,  1,	4,  2,	1,
+			4, 4,	0,  -3,	5,
 			-3, 2,	-3, -3,	2,
-			-1, 1,	-3, -3,	0.01};
-    double	b[5]={	4,
-			1,
-			-2,
-			3,
-			2
-		    };
+			-1, 1,	5, 2,	1};
+
+/*
+    double	m[9]=  {   12,	-51,-4,
+			    -51,167,24,
+			    -4,	24, 41 };
+*/	
 
     int n=sqrt(sizeof(m)/sizeof(double));
     A=matrix_new(n,n);
     X=matrix_new(n,1);
-    B=matrix_new(n,1);
     
     matrix_assign(A,m);
-    matrix_assign(B,b);
 
-    printf("mean: %f\n", mean(B));
-    printf("variance: %f\n", variance(B));
-    printf("sumsquares: %f\n", sumsquares(B));
-    printf("sdev: %f\n", sdev(B));
-    printf("variance_sample: %f\n", variance_sample(B));
-  printf("sdev_sample: %f\n", sdev_sample(B));
+    int iterations=matrix_eigenvalues(A,X,g_precision);
 
-
-    syslinQR(A,X,B);
-    syslinGauss(A,X,B);
     matrix_print(stdout,A,"A");
-    matrix_print(stdout,B,"B");
-    matrix_print(stdout,X,"X");
-
+    printf("Itérations: %d\n",iterations);
+    matrix_print(stdout,X,"Eigenvalues");
+    matrix_print(stdout,inertia=matrix_ev_inertia(X), "Inerties");
+    EV=matrix_eigenvectors(A,X);
+    matrix_print(stdout,EV,"Eigenvectors");
+    
+    matrix_free(inertia);
+    matrix_free(EV);
     matrix_free(A);
-    matrix_free(B);
     matrix_free(X);
 return 0;
 }
