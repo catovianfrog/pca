@@ -139,6 +139,8 @@ void matrix_printf(FILE *f, const t_matrix *M, char* format, char* msg) {
     if(strlen(msg)>msglen) msg[msglen]='\0';
     middlepos=(spacerlen-strlen(msg))/2;
     memcpy(&spacer[middlepos],msg,strlen(msg));
+    spacer[middlepos-1]=' ';
+    spacer[middlepos+strlen(msg)]=' ';
 
     //To check validity of the format, use snprintf to compute the result
     //in teststr, and then test the code returned by snprintf is positive

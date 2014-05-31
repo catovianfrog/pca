@@ -12,9 +12,8 @@ test:   test.c
 
 clean:
 	rm -f *.o
-	rm -f qr
-	rm -f mat
 	rm -f test
 	rm -f pca
+	rm -f al
 	
 
