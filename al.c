@@ -7,6 +7,7 @@
 #define PRECISION      1e-6	    // stop iterations when residue < PRECISION
 #define LINE_LENGTH    1000	    // max length of data file lines
 #define NAME_LENGTH    255	    // length of strings & labels
+#define DOUBLE_FORMAT  "%9.3f"	    // default printing format for double precision floats
 //*********************************************************************
 typedef	struct  {   int	    nrows;
 		    int	    ncols;
@@ -120,7 +121,7 @@ void	matrix_assign(t_matrix *m, void *p) {
  *   Prints out the matrix m with message 'msg' as a header line.
  *   The string 'format' is used if not empty and valid formating 
  *   string for a doubleprecision real. If 'format' is empty or invalid,
- *   default numbers printout format is "% 8.2g\t"
+ *   default numbers printout format is DOUBLE_FORMAT
  **********************************************************************/
 void matrix_printf(FILE *f, const t_matrix *M, char* format, char* msg) {
     int		i,j;
@@ -130,7 +131,7 @@ void matrix_printf(FILE *f, const t_matrix *M, char* format, char* msg) {
     char	teststr[50];
     //char	form[20]="% 8.2g";
     //char	form[20]="% 9.3g";
-    char	form[20]="% 9.3f";
+    char	form[20]=DOUBLE_FORMAT;
     char	spacer[spacerlen];
     
     // pads the spacer with underscores and write msg in the middle
