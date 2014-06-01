@@ -282,12 +282,8 @@ int	read_dataset(t_fname fname, t_dataset *dataset) {
 	fprintf(stderr, "Error: no headers line in data file %s.\n",fname);
 	exit(8);
     }                    
-    printf("==%s==\n",s);
     s[strlen(s)-1]='\0';  // remove NL at the end
-    printf("==%s==\n",s);
     ncols=str2headers(s,dataset->headers)-1;  // first colunm are labels
-    printf("==ncols %d==\n",ncols);
-
     V=malloc(sizeof(*V));
     nrows=0;
     while (fgets(s, sizeof(s), fichier_data) != NULL) {
@@ -422,7 +418,7 @@ void	print_cercle_corr(FILE *fptr, t_acp_data acp) {
     n=acp.data->ncols;
     fprintf(fptr,"\n#--- Correlations Circle -------");
     for(i=0;i<n;i++) {
-	fprintf(fptr,"\n %8s\t",acp.data->headers[i+1]);
+	fprintf(fptr,"\n%-8s\t",acp.data->headers[i+1]);
 	for(j=0;j<n;j++) {
 	    fprintf(fptr,"%6.3f\t",acp.e_vectors[i][j]*sqrt(acp.e_values[j]));
 	}
@@ -784,8 +780,6 @@ int str2headers(char *linestr, t_labels headers) {
     		 j++;
         }
         s[j]='\0';
-	//DEBUG: 
-	printf("j: %d\tk: %d\tcol: %d\t%s\n",j,k,cols,s);
 	strcpy(headers[cols],s);
 	cols++;
     }
