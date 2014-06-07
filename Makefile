@@ -4,7 +4,7 @@ LDFLAGS = -lm
 pca: 	pca.c
 	gcc $(CFLAGS)  pca.c -o pca $(LDFLAGS)   
 
-al: 	al.c
+al: 	al.c dbg.h
 	gcc $(CFLAGS)  al.c -o al $(LDFLAGS)   
 
 test:   test.c
