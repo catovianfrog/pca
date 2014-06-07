@@ -839,7 +839,11 @@ int main(int argc, char *argv[]) {
 return 0;
 
 error:
-    printf("Error\t%s\t%d\t%s \n",__FILE__,__LINE__,__FUNCTION__);
+    debug("Error tracking");
+    log_err("Error tracking");
+    log_warn("Error tracking");
+    log_info("Error tracking");
+
     return(16);
 }
 
