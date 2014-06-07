@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h> 
+#include "dbg.h"		    // error handling macros
 
 #define MAX_ITERATION  1e5	    // max number of iterations for eigenvalues
 #define PRECISION      1e-6	    // stop iterations when residue < PRECISION
@@ -829,9 +830,16 @@ int main(int argc, char *argv[]) {
     matrix_print(stdout,EV,"Eigenvectors");
     
     matrix_free(inertia);
+    inertia=NULL;
+    check(inertia,"after freeing inertia");
+    check_mem(inertia);
     matrix_free(EV);
     matrix_free(A);
     matrix_free(X);
 return 0;
+
+error:
+    printf("Error\t%s\t%d\t%s \n",__FILE__,__LINE__,__FUNCTION__);
+    return(16);
 }
 
