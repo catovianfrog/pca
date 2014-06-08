@@ -831,7 +831,6 @@ int main(int argc, char *argv[]) {
     
     matrix_free(inertia);
     inertia=NULL;
-    check(inertia,"after freeing inertia");
     check_mem(inertia);
     matrix_free(EV);
     matrix_free(A);
