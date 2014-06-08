@@ -1,14 +1,12 @@
 CFLAGS=-Wall -g -DNDBUG -O0
 LDFLAGS = -lm
 
-pca: 	pca.c
+pca: 	pca.c libal.c
 	gcc $(CFLAGS)  pca.c -o pca $(LDFLAGS)   
 
-al: 	al.c dbg.h
-	gcc $(CFLAGS)  al.c -o al $(LDFLAGS)   
+libal: 	libal.c dbg.h
+	gcc $(CFLAGS)  -c libal.c  $(LDFLAGS)   
 
-test:   test.c
-	cc test.c -o test -lm
 
 clean:
 	rm -f *.o

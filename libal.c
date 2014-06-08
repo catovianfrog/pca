@@ -1,67 +1,31 @@
+/**********************************************************************
+ * 
+ *	 al.c 
+ *
+ *	Linear algrebra library
+ *	(C) Bruno S. Charrière  2014 under GPL (see LICENSE.pdf in repository)
+ *
+ *
+ */#define	VERSION "0.9.0"    /*
+ *  
+ **********************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h> 
 #include "dbg.h"		    // error handling macros
+#include "al.h"
 
-#define MAX_ITERATION  1e5	    // max number of iterations for eigenvalues
+//---------------------------------------------------------------------
+#define MAX_ITERATION  1e+5	    // max number of iterations for eigenvalues
 #define PRECISION      1e-6	    // stop iterations when residue < PRECISION
 #define LINE_LENGTH    1000	    // max length of data file lines
 #define NAME_LENGTH    255	    // length of strings & labels
 #define DOUBLE_FORMAT  "%9.3f"	    // default printing format for double precision floats
 //*********************************************************************
-typedef	struct  {   int	    nrows;
-		    int	    ncols;
-		    double  *data; }	t_matrix;
-/**********************************************************************
- * TODO
- *	    - reset relevant function parameters as 'const'
- **********************************************************************/
+char		*version	=   VERSION;
 const double	g_precision	=   PRECISION;
 const double	g_max_iterations=   MAX_ITERATION;
-
-//---------- Functions prototypes ----------------------------------------------
-t_matrix*   matrix_new(int nrows, int ncols);
-void	    matrix_free(t_matrix *m);
-t_matrix*   matrix_new_vector(int n, void *p);
-inline double matrix_get(const t_matrix *M, int i, int j); // body must be in header
-inline int  matrix_set(t_matrix *M, const int i, const int j, const double r);
-void	    matrix_assign(t_matrix *m, void *p); 
-void	    matrix_printf(FILE *f, const t_matrix *M, char* format, char* msg);
-void	    matrix_print(FILE *f, const t_matrix *m, char* msg);
-t_matrix*   matrix_prod(const t_matrix *A, const t_matrix *B);
-t_matrix*   matrix_add(const t_matrix *A, const t_matrix *B, const double scale);
-t_matrix*   matrix_copy(const t_matrix *M);
-int	    matrix_move(t_matrix *Dest, const t_matrix *Source);
-t_matrix*   matrix_scale(const t_matrix *M, const double scalar);
-t_matrix*   matrix_Id(const int nrows, const int ncols);
-t_matrix*   matrix_transpose(const t_matrix *M);
-double	    matrix_norm(const t_matrix *M);
-t_matrix*   matrix_normalize(const t_matrix *M);
-double	    matrix_trace(const t_matrix* M);
-double	    matrix_lower_residue(const t_matrix *M);
-t_matrix*   matrix_get_vector(const t_matrix *M, const int n);
-int	    matrix_set_vector(t_matrix *M,const int n, const t_matrix *V);
-t_matrix*   matrix_get_block(const t_matrix *M,int n,int m,int i0,int j0);
-int         matrix_set_block(const t_matrix *S,t_matrix *D,int i0,int j0);
-int	    matrix_qr_decomp(t_matrix *A, t_matrix *Q, t_matrix *R);
-int	    matrix_eigenvalues(const t_matrix *A, t_matrix *EV, double precision);
-t_matrix*   matrix_ev_inertia(const t_matrix *eigenvalues);
-t_matrix*   matrix_eigenvector(const t_matrix *M, const double r);
-t_matrix*   matrix_eigenvectors(const t_matrix *M, const t_matrix *e_values);
-int	    syslinQR(t_matrix *A, t_matrix *X, t_matrix *B);
-int	    syslinGauss(t_matrix const *A, t_matrix *X, t_matrix const *B);
-
-//--------- basic statistics functions  ----------------------------------------
-double	    sign(double x);
-double	    mean(t_matrix *V);
-double	    sumsquares(t_matrix *V);
-double	    variance(t_matrix *V);
-double	    sdev(t_matrix *V);
-double	    variance_sample(t_matrix *V);
-double	    sdev_sample(t_matrix *V);
-//------------------------------------------------------------------------------
-
 
 /**********************************************************************
  *  matrix_new: returns a new matrix, or NULL if not enough memory
@@ -93,28 +57,6 @@ t_matrix*   matrix_new_vector(int n, void *p) {
         v=matrix_new(n,1);
 	if(p !=NULL) memcpy(v->data, p, sizeof(*v->data));
 	return v;
-}
-/**********************************************************************
- * matrix_set(M,i,j,r)  ==>  M[i,j]=r                    
- *  in case you can't remember the normal syntax M->data[i*M->ncols+j]=r; 
- **********************************************************************/
-inline int matrix_set(t_matrix *M, const int i, const int j, const double r) {
-    if(i>=M->nrows || j>=M->ncols) return 1;
-    M->data[i*M->ncols+j]=r;
-    return 0;
-}
-/**********************************************************************
- * matrix_get: aij = matrix_get(M,i,j);
- **********************************************************************/
-inline double matrix_get(const t_matrix *M, int i, int j) {
-    if(i>=M->nrows || j>=M->ncols) return nan("");
-    return M->data[i*M->ncols+j];
-}
-/**********************************************************************
- * matrix_assign       SHOULD BE IN THE HEADER (inline)
- **********************************************************************/
-void	matrix_assign(t_matrix *m, void *p) {
-    memcpy(m->data,p,m->nrows*m->ncols*sizeof(double));
 }
 /**********************************************************************
  *  matrix_printf(FILE *f, t_matrix *M, char* format, char* msg);
@@ -796,53 +738,7 @@ double sdev_sample(t_matrix *V) {
     return sqrt(variance_sample(V));
 }
 /**********************************************************************
- * 			    
  * 			    MAIN
- *
  **********************************************************************/
-int main(int argc, char *argv[]) {
-    t_matrix	*A,*X, *EV, *inertia;
-    double	m[25]={-1,  3,	4,  -3,	-1,
-			3,  1,	4,  2,	1,
-			4, 4,	0,  -3,	5,
-			-3, 2,	-3, -3,	2,
-			-1, 1,	5, 2,	1};
-
-/*
-    double	m[9]=  {   12,	-51,-4,
-			    -51,167,24,
-			    -4,	24, 41 };
-*/	
-
-    int n=sqrt(sizeof(m)/sizeof(double));
-    A=matrix_new(n,n);
-    X=matrix_new(n,1);
-    
-    matrix_assign(A,m);
-
-    int iterations=matrix_eigenvalues(A,X,g_precision);
-
-    matrix_print(stdout,A,"A");
-    printf("Itérations: %d\n",iterations);
-    matrix_print(stdout,X,"Eigenvalues");
-    matrix_print(stdout,inertia=matrix_ev_inertia(X), "Inerties");
-    EV=matrix_eigenvectors(A,X);
-    matrix_print(stdout,EV,"Eigenvectors");
-    
-    matrix_free(inertia);
-    inertia=NULL;
-    check_mem(inertia);
-    matrix_free(EV);
-    matrix_free(A);
-    matrix_free(X);
-return 0;
-
-error:
-    debug("Error tracking");
-    log_err("Error tracking");
-    log_warn("Error tracking");
-    log_info("Error tracking");
-
-    return(16);
-}
+int main(int argc, char *argv[]) {return 0;}
 
