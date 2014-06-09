@@ -1,7 +1,7 @@
 CFLAGS=-Wall -g -DNDBUG -O0
 LDFLAGS = -lm
 
-pca: 	pca.c libal.c
+pca: 	pca.c libal.c dbg.h
 	gcc $(CFLAGS)  pca.c -o pca $(LDFLAGS)   
 
 libal: 	libal.c dbg.h
