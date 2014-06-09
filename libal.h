@@ -49,7 +49,7 @@ double	    sdev_sample(t_matrix *V);
 
 /**********************************************************************
  *	    Inline functions  
- **********************************************************************/
+ **********************************************************************
 inline 
 double	    matrix_get(const t_matrix *M, int i, int j) {
 	    if(i>=M->nrows || j>=M->ncols) return nan(""); return M->data[i*M->ncols+j];}
@@ -58,6 +58,6 @@ int	    matrix_set(t_matrix *M,const int i, const int j, const double r){
 	    if(i>=M->nrows || j>=M->ncols) return 1; M->data[i*M->ncols+j]=r; return 0;}
 inline 
 void	    matrix_assign(t_matrix *m, void *p){memcpy(m->data,p,m->nrows*m->ncols*sizeof(double));}
-/*********************************************************************/
+*********************************************************************/
 #endif
 
