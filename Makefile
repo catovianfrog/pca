@@ -14,5 +14,7 @@ clean:
 	rm -f test
 	rm -f pca
 	rm -f al
+	rm -f tmp.*
+	rm -f temp.*
 	
 
