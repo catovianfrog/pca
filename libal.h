@@ -3,13 +3,14 @@
  *	Headers for al.c, Linear algrebra library
  *	(C) Bruno S. Charrière  2014 under GPL
  **********************************************************************/
-#ifndef __al_h__
-#define __al_h__
+#ifndef __libal_h__
+#define __libal_h__
 
 typedef	struct  {   int	    nrows;
 		    int	    ncols;
 		    double  *data; }	t_matrix;
 //------------------------------------------------------------------------------
+
 t_matrix*   matrix_new(int nrows, int ncols);
 void	    matrix_free(t_matrix *m);
 t_matrix*   matrix_new_vector(int n, void *p);
@@ -45,6 +46,7 @@ double	    variance(t_matrix *V);
 double	    sdev(t_matrix *V);
 double	    variance_sample(t_matrix *V);
 double	    sdev_sample(t_matrix *V);
+
 /**********************************************************************
  *	    Inline functions  
  **********************************************************************/

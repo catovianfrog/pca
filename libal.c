@@ -1,6 +1,6 @@
 /**********************************************************************
  * 
- *	 al.c 
+ *	 al.c   (libal.c)
  *
  *	Linear algrebra library
  *	(C) Bruno S. Charrière  2014 under GPL (see LICENSE.pdf in repository)
@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <math.h> 
 #include "dbg.h"		    // error handling macros
-#include "al.h"
+#include "libal.h"
 
 //---------------------------------------------------------------------
 #define MAX_ITERATION  1e+5	    // max number of iterations for eigenvalues
@@ -26,7 +26,44 @@
 char		*version	=   VERSION;
 const double	g_precision	=   PRECISION;
 const double	g_max_iterations=   MAX_ITERATION;
-
+//------------------------------------------------------------------------------
+/*
+t_matrix*   matrix_new(int nrows, int ncols);
+void	    matrix_free(t_matrix *m);
+t_matrix*   matrix_new_vector(int n, void *p);
+void	    matrix_printf(FILE *f, const t_matrix *M, char* format, char* msg);
+void	    matrix_print(FILE *f, const t_matrix *m, char* msg);
+t_matrix*   matrix_prod(const t_matrix *A, const t_matrix *B);
+t_matrix*   matrix_add(const t_matrix *A, const t_matrix *B, const double scale);
+t_matrix*   matrix_copy(const t_matrix *M);
+int	    matrix_move(t_matrix *Dest, const t_matrix *Source);
+t_matrix*   matrix_scale(const t_matrix *M, const double scalar);
+t_matrix*   matrix_Id(const int nrows, const int ncols);
+t_matrix*   matrix_transpose(const t_matrix *M);
+double	    matrix_norm(const t_matrix *M);
+t_matrix*   matrix_normalize(const t_matrix *M);
+double	    matrix_trace(const t_matrix* M);
+double	    matrix_lower_residue(const t_matrix *M);
+t_matrix*   matrix_get_vector(const t_matrix *M, const int n);
+int	    matrix_set_vector(t_matrix *M,const int n, const t_matrix *V);
+t_matrix*   matrix_get_block(const t_matrix *M,int n,int m,int i0,int j0);
+int         matrix_set_block(const t_matrix *S,t_matrix *D,int i0,int j0);
+int	    matrix_qr_decomp(t_matrix *A, t_matrix *Q, t_matrix *R);
+int	    matrix_eigenvalues(const t_matrix *A, t_matrix *EV, double precision);
+t_matrix*   matrix_ev_inertia(const t_matrix *eigenvalues);
+t_matrix*   matrix_eigenvector(const t_matrix *M, const double r);
+t_matrix*   matrix_eigenvectors(const t_matrix *M, const t_matrix *e_values);
+int	    syslinQR(t_matrix *A, t_matrix *X, t_matrix *B);
+int	    syslinGauss(t_matrix const *A, t_matrix *X, t_matrix const *B);
+//--------- basic statistics functions  ----------------------------------------
+double	    sign(double x);
+double	    mean(t_matrix *V);
+double	    sumsquares(t_matrix *V);
+double	    variance(t_matrix *V);
+double	    sdev(t_matrix *V);
+double	    variance_sample(t_matrix *V);
+double	    sdev_sample(t_matrix *V);
+*/                                           
 /**********************************************************************
  *  matrix_new: returns a new matrix, or NULL if not enough memory
  *		all new matrices and vectors are initialized with 0
@@ -288,17 +325,6 @@ t_matrix*    matrix_get_vector(const t_matrix *M, const int n) {
 	V->data[i]=M->data[i*(M->ncols)+n];
     }
     return V;
-}
-/**********************************************************************
- * matrix_set_vector: sets matrix column n (0.. ncols-1) from vector V
- **********************************************************************/
-int	matrix_set_vector(t_matrix *M,const int n, const t_matrix *V) {
-    int		i;
-    if( n>=M->ncols) return 1;
-    for(i=0;i<M->nrows;i++) {
-	M->data[i*M->ncols+n]=V->data[i];
-    }
-    return 0;
 }
 /**********************************************************************
  * matrix_get_block: returns the sub-matrix of size n,m located at i0,j0
@@ -737,8 +763,4 @@ double variance_sample(t_matrix *V) {
 double sdev_sample(t_matrix *V) {
     return sqrt(variance_sample(V));
 }
-/**********************************************************************
- * 			    MAIN
- **********************************************************************/
-int main(int argc, char *argv[]) {return 0;}
 

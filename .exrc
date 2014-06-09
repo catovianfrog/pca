@@ -1,3 +1,4 @@
+set number
 if &cp | set nocp | endif
 let s:cpo_save=&cpo
 set cpo&vim
@@ -5,8 +6,7 @@ map! <S-Insert> <MiddleMouse>
 nmap gx <Plug>NetrwBrowseX
 nnoremap <silent> <Plug>NetrwBrowseX :call netrw#NetrwBrowseX(expand("<cWORD>"),0)
 map <S-Insert> <MiddleMouse>
-abbr Com2 O//------------------------------------------------------------------------------^llllllllllllR
-abbr Com //------------------------------------------------------------------------------0llllllllllllR
+abbr Com 0O//---------------------------------------------------------------------^llllllllllllR
 abbr Titre /**********************************************************************<BS><BS>**********************************************************************/<Up><End>
 let &cpo=s:cpo_save
 unlet s:cpo_save
