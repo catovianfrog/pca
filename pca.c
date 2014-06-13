@@ -16,23 +16,27 @@
 #define	PROGNAME	"pca - Principal component analysis"
 #define DEFAULT_OUT	"pca_out.dat"	// default name of output data file.
 #define DEFAULT_IN	"pca_input.dat"	// default name of input  data file.
-#define LINE_LENGTH	10000		// max length of data file lines
-#define NAME_LENGTH	255		// length of strings & labels
+#define LINE_LENGTH	100000		// max length of data file lines
+#define TAG_LENGTH	20		// length of labels / tags
+#define NAME_LENGTH	255		// length of descriptive strings
 #define MAX_ROWS	40000		// maximum number of data lines (arbitrary);
 #define MAX_COLS	10000		// maximum number of data columns (parameters)
 
-typedef char	    t_fname  [NAME_LENGTH];
-typedef char	    t_header [NAME_LENGTH];
-typedef	char	    *t_tag;                     // label type, variable length str
-typedef t_tag	    *t_labels;			// dynamic array of labels
+typedef char	    t_fname [NAME_LENGTH];
+typedef char	    t_title [NAME_LENGTH];
+typedef	char	    t_tag   [TAG_LENGTH];       // label type
+typedef	struct	{   int		ntags;		// number of tags in Headers array
+		    t_tag	*tags;		// dynamic array of tags
+		} t_headers;			// t_headers=vector of tags
+
 typedef struct 	{   t_matrix	data;		// numerical datasets
 		    t_matrix	data_cr;	// centered reduced dataset
-		    t_header	title;		// project title
-		    t_labels	headers;	// parameters names
-		    t_labels	abbrevs;	// abbreviated parameters names
-		    t_labels	obs_id; 	// observations labels (lines)
+		    t_title	title;		// project title
+		    t_headers	*headers;	// parameters names
+		    t_headers   *abbrevs;        // abbreviated parameters names
+		    t_headers	*obs_id; 	// observations labels (lines)
 		    int		n_obs;		// number of lines (observations)
-		    int		ncols;		// number of columns (parameters) 
+		    int		ncols;	        // number of columns (parameters) 
 		} t_dataset;
 typedef struct 	{   int		order;		// order of the dataset (ncols)
 		    t_matrix    means;		// means of columns
@@ -54,7 +58,7 @@ const char	*g_version =VERSION;
 const char	*g_progname=PROGNAME;
 //---------------------------function prototypes--------------------------------
 int	read_dataset(const t_fname fname, t_dataset *dataset);
-int	str2headers(char *linestr, t_labels headers);
+t_headers *str2headers(char *linestr);
 int	str2hvector(char *linestr, t_matrix *v);
 
 /**********************************************************************
@@ -62,9 +66,9 @@ int	str2hvector(char *linestr, t_matrix *v);
  **********************************************************************/
 int main( int argc, char *argv[]) {        // args not used so far
 
-    FILE	*outputf;
+//    FILE	*outputf;
     char	in_fname[NAME_LENGTH] = DEFAULT_IN;
-    char	outfname[NAME_LENGTH] = DEFAULT_OUT;
+//    char	outfname[NAME_LENGTH] = DEFAULT_OUT;
     t_dataset	*dataset;	// structure containing input data
     t_datastats	*datastats;     // structure containing dataset base statistics
     t_acp_data	*pca;           // structure containing dataset PCA results
@@ -119,7 +123,7 @@ int	read_dataset(const t_fname fname, t_dataset *dataset) {
     }                    
     s[strlen(s)-1]='\0';  // remove NL at the end
     // read first line = name + headers
-    ncols=str2headers(s,dataset->headers)-1;  // first colunm are labels
+    dataset->headers=str2headers(s);  // first colunm are labels
     
     V=matrix_new(1,ncols);
     nrows=0;
@@ -129,13 +133,13 @@ int	read_dataset(const t_fname fname, t_dataset *dataset) {
 	    exit(8);
 	}
 	if(s[0]=='#') continue;
-        if(sscanf(s,"%s",dataset->obs_id[nrows])!=1) {
+        if(sscanf(s,"%s",dataset->obs_id->tags[nrows])!=1) {
 	    fprintf(stderr, "Error: observation label n°%d cannot be read.\n",nrows+1);
 	    exit(8);
 	}
 
     // ptr shift: eliminates the first label from s
-	ptr=s+strlen(dataset->obs_id[nrows]);  
+	ptr=s+strlen(dataset->obs_id->tags[nrows]);  
 
 	if (str2hvector(ptr, V)==0) {
 	    fprintf(stderr, "Error: reading line %d of input file %s.\n",nrows, fname);
@@ -145,7 +149,7 @@ int	read_dataset(const t_fname fname, t_dataset *dataset) {
 	nrows++;
     }
     // A longer title should be planned. For the moment long title= short title (Headers[0])
-    strcpy(dataset->title,dataset->headers[0]);
+    strcpy(dataset->title,dataset->headers->tags[0]);
     dataset->n_obs=nrows;
     dataset->ncols=ncols;   
     matrix_free(V);
@@ -161,12 +165,16 @@ int	read_dataset(const t_fname fname, t_dataset *dataset) {
  *	    returns the number of headers read
  * TODO	    manage quotes and escape sequences in text data
  **********************************************************************/
-int str2headers(char *linestr, t_labels headers) {
-    t_header	 s;     // string used to build the header substr
+t_headers *str2headers(char *linestr) {
+    t_headers	 *headers;
+    t_tag	 s;     // string used to build the header substr
     int		 j;     // indice de position du caractère  du header
     int		 k;	// indice de position dans la chaine
     int		cols;	// number of headers/columns in data set
     
+    headers=calloc(1,sizeof(t_headers));
+    headers->tags=NULL;
+    // error handling here
     k=0;                        
     cols=0;
     strcat(linestr," ");  // add a space at the end to terminate the headers counting
@@ -187,10 +195,14 @@ int str2headers(char *linestr, t_labels headers) {
     		 j++;
         }
         s[j]='\0';
-	strcpy(headers[cols],s);
+	printf("\n%s\n=%s=\n",linestr,s);
+
 	cols++;
+	headers->tags=realloc(headers->tags,sizeof(t_tag)*cols);
+	strcpy(headers->tags[cols-1],s);
     }
-    return cols-1;
+    headers->ntags=cols;
+    return headers;
 }                                                    
 /**********************************************************************
  * str2hvector: converts the string into a vector of N=v->nrows reals
