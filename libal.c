@@ -59,6 +59,15 @@ t_matrix*   matrix_new_vector(int n, void *p) {
 	return v;
 }
 /**********************************************************************
+ * matrix_add_rows: add n new rows at the bottom of matrix argument
+ *		    returns NULL if error (not enough memory)
+ **********************************************************************/
+ void *matrix_add_rows(t_matrix *m, int n){
+     m->nrows+=n;
+     m->data=realloc(m->data,m->nrows*m->ncols*sizeof(double));
+     return m->data;
+ }
+/**********************************************************************
  *  matrix_printf(FILE *f, t_matrix *M, char* format, char* msg);
  *
  *   Prints out the matrix m with message 'msg' as a header line.
@@ -154,7 +163,7 @@ t_matrix*   matrix_add(const t_matrix *A, const t_matrix *B, const double scale)
     return S;
 }
 /**********************************************************************
- * matrix_copy
+ * matrix_copy   returns a new matrix, copy of the argument
  **********************************************************************/
 t_matrix*   matrix_copy(const t_matrix *M) {
 

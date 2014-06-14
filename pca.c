@@ -4,7 +4,7 @@
  */
     #define	VERSION "2.0"
 /*  Author:	Bruno S. Charrière
- *  Date:	9.06.2014
+ *  Date:	15.06.2014
  *****************************************************************************/
 #include <stdio.h>
 #define  _GNU_SOURCE
@@ -29,7 +29,7 @@ typedef	struct	{   int		ntags;		// number of tags in Headers array
 		    t_tag	*tags;		// dynamic array of tags
 		} t_headers;			// t_headers=vector of tags
 
-typedef struct 	{   t_matrix	data;		// numerical datasets
+typedef struct 	{   t_matrix	*data;		// numerical datasets
 		    t_matrix	data_cr;	// centered reduced dataset
 		    t_title	title;		// project title
 		    t_headers	*headers;	// parameters names
@@ -77,6 +77,7 @@ int main( int argc, char *argv[]) {        // args not used so far
     dataset   =	malloc(sizeof(*dataset));
     datastats =	malloc(sizeof(*datastats));
     pca	      =	malloc(sizeof(*pca));
+
     // didn't put memory checks here. Shouldn't be needed.
     pca->data=dataset;
     pca->stats=datastats;
@@ -96,6 +97,7 @@ int	read_dataset(const t_fname fname, t_dataset *dataset) {
 
     FILE	*fichier_data; 
     char	s[LINE_LENGTH];
+    t_tag	tag;
     int		nrows, ncols;
     char	*ptr;
     t_matrix	*V;		// hVector
@@ -124,34 +126,47 @@ int	read_dataset(const t_fname fname, t_dataset *dataset) {
     s[strlen(s)-1]='\0';  // remove NL at the end
     // read first line = name + headers
     dataset->headers=str2headers(s);  // first colunm are labels
-    
-    V=matrix_new(1,ncols);
+//------ -----------------------------------------------------------------------
+printf("%d strings, %d parameters.\n",dataset->headers->ntags,dataset->headers->ntags-1);
+int i;
+for(i=0;i<dataset->headers->ntags;i++) printf("%s\n",dataset->headers->tags[i]);
+//------------------------------------------------------------------------------    
+
+    V=matrix_new(1,dataset->headers->ntags-1);
+    dataset->data=matrix_new(1,dataset->headers->ntags-1);
     nrows=0;
+    dataset->obs_id=calloc(1,sizeof(t_headers));
+    dataset->obs_id->tags=NULL;
     while (fgets(s, sizeof(s), fichier_data) != NULL) {
 	if(nrows>=MAX_ROWS) {
 	    fprintf(stderr,"Error: too many lines in data file (max %d)\n",MAX_ROWS);
 	    exit(8);
 	}
 	if(s[0]=='#') continue;
-        if(sscanf(s,"%s",dataset->obs_id->tags[nrows])!=1) {
+        if(sscanf(s,"%s",tag)!=1) {
 	    fprintf(stderr, "Error: observation label n°%d cannot be read.\n",nrows+1);
 	    exit(8);
 	}
-
-    // ptr shift: eliminates the first label from s
-	ptr=s+strlen(dataset->obs_id->tags[nrows]);  
-
+	dataset->obs_id->tags=realloc(dataset->obs_id->tags,sizeof(t_tag)*(nrows+1));
+	strcpy(dataset->obs_id->tags[nrows],tag);
+	// ptr shift: eliminates the first label from s before reading numerical values
+	ptr=s+strlen(tag);
+	s[strlen(s)-1]='\0';  // remove NL at the end
+printf("=%s= \n",ptr);
 	if (str2hvector(ptr, V)==0) {
 	    fprintf(stderr, "Error: reading line %d of input file %s.\n",nrows, fname);
 		 exit(8);
 	    }
-	    matrix_set_block(V,&dataset->data,nrows,0);
+	    matrix_add_rows(dataset->data,1);
+	    matrix_set_block(V,dataset->data,nrows,0);
 	nrows++;
     }
-    // A longer title should be planned. For the moment long title= short title (Headers[0])
+    // A longer title should be planned. 
+    // For the moment long title=short title (Headers[0])
     strcpy(dataset->title,dataset->headers->tags[0]);
     dataset->n_obs=nrows;
-    dataset->ncols=ncols;   
+    dataset->ncols=ncols;
+    dataset->obs_id->ntags=nrows;
     matrix_free(V);
     fclose(fichier_data);
     return 0;
@@ -178,7 +193,6 @@ t_headers *str2headers(char *linestr) {
     k=0;                        
     cols=0;
     strcat(linestr," ");  // add a space at the end to terminate the headers counting
-    printf("=%s=\n",linestr);
     while(k<strlen(linestr)){
         if(cols>=MAX_COLS) {
 	    fprintf(stderr,"Error: to many parameters in data file (max comlumns: %d).\n",MAX_COLS);
@@ -195,13 +209,11 @@ t_headers *str2headers(char *linestr) {
     		 j++;
         }
         s[j]='\0';
-	printf("\n%s\n=%s=\n",linestr,s);
-
 	cols++;
 	headers->tags=realloc(headers->tags,sizeof(t_tag)*cols);
 	strcpy(headers->tags[cols-1],s);
     }
-    headers->ntags=cols;
+    headers->ntags=cols-1;
     return headers;
 }                                                    
 /**********************************************************************

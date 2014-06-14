@@ -14,6 +14,7 @@ typedef	struct  {   int	    nrows;
 t_matrix*   matrix_new(int nrows, int ncols);
 void	    matrix_free(t_matrix *m);
 t_matrix*   matrix_new_vector(int n, void *p);
+void*	    matrix_add_rows(t_matrix *m, int n);
 void	    matrix_printf(FILE *f, const t_matrix *M, char* format, char* msg);
 void	    matrix_print(FILE *f, const t_matrix *m, char* msg);
 t_matrix*   matrix_prod(const t_matrix *A, const t_matrix *B);
