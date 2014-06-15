@@ -17,20 +17,14 @@
 #define DEFAULT_OUT	"pca_out.dat"	// default name of output data file.
 #define DEFAULT_IN	"pca_input.dat"	// default name of input  data file.
 #define LINE_LENGTH	100000		// max length of data file lines
-#define TAG_LENGTH	20		// length of labels / tags
 #define NAME_LENGTH	255		// length of descriptive strings
 #define MAX_ROWS	40000		// maximum number of data lines (arbitrary);
 #define MAX_COLS	10000		// maximum number of data columns (parameters)
 
 typedef char	    t_fname [NAME_LENGTH];
 typedef char	    t_title [NAME_LENGTH];
-typedef	char	    t_tag   [TAG_LENGTH];       // label type
-typedef	struct	{   int		ntags;		// number of tags in Headers array
-		    t_tag	*tags;		// dynamic array of tags
-		} t_headers;			// t_headers=vector of tags
-
 typedef struct 	{   t_matrix	*data;		// numerical datasets
-		    t_matrix	data_cr;	// centered reduced dataset
+		    t_matrix	*data_cr;	// centered reduced dataset
 		    t_title	title;		// project title
 		    t_headers	*headers;	// parameters names
 		    t_headers   *abbrevs;        // abbreviated parameters names
@@ -39,10 +33,10 @@ typedef struct 	{   t_matrix	*data;		// numerical datasets
 		    int		ncols;	        // number of columns (parameters) 
 		} t_dataset;
 typedef struct 	{   int		order;		// order of the dataset (ncols)
-		    t_matrix    means;		// means of columns
-		    t_matrix    sdevs;		// standard deviations of columns
-		    t_matrix    covar;		// covariance matrix
-		    t_matrix    correl;		// correlation matrix
+		    t_matrix    *means;		// means of columns
+		    t_matrix    *sdevs;		// standard deviations of columns
+		    t_matrix    *covar;		// covariance matrix
+		    t_matrix    *correl;		// correlation matrix
 		} t_datastats;
 typedef struct	{   /**** ACP data structure ****/
 		    t_dataset   *data;		// pointer to dataset (dont forget to assign it;
@@ -60,6 +54,10 @@ const char	*g_progname=PROGNAME;
 int	read_dataset(const t_fname fname, t_dataset *dataset);
 t_headers *str2headers(char *linestr);
 int	str2hvector(char *linestr, t_matrix *v);
+void	dataset_free(t_dataset *d);
+void	print_dataset(FILE *fptr, t_dataset *dataset);
+void	compute_datastats(t_dataset *D,t_datastats *S);
+
 
 /**********************************************************************
  *		    M A I N
@@ -74,31 +72,108 @@ int main( int argc, char *argv[]) {        // args not used so far
     t_acp_data	*pca;           // structure containing dataset PCA results
                  
     printf("%s, v%s\n",g_progname, g_version);
+    // didn't put memory checks here. Shouldn't be needed.
     dataset   =	malloc(sizeof(*dataset));
     datastats =	malloc(sizeof(*datastats));
     pca	      =	malloc(sizeof(*pca));
-
-    // didn't put memory checks here. Shouldn't be needed.
-    pca->data=dataset;
+    pca->data =dataset;
     pca->stats=datastats;
-
     read_dataset(in_fname,dataset);
+    print_dataset(stdout,dataset);
+    compute_datastats(dataset, datastats);
 
-    
     free(pca);
     free(datastats);
-    free(dataset);
+    dataset_free(dataset);
     return 0;
 }
 /**********************************************************************
-* read_dataset: read data file and return a t_dataset structure
+ * dataset_free: free dynamic memory of argument *dataset
+ **********************************************************************/
+ void	dataset_free(t_dataset *d) {
+     free(d->obs_id->tags);
+     free(d->obs_id);
+     matrix_free_headers(d->headers);
+     matrix_free(d->data);
+     free(d);
+ }
+/**********************************************************************
+* print_dataset(FILE *fptr, t_dataset *dataset)
+**********************************************************************/
+void print_dataset(FILE *fptr, t_dataset *dataset) {
+
+    int		i,j;
+    int		ncols, n_obs;
+    t_tag	*title;
+    t_title	*long_title;
+
+    //not efficient but better legibility
+    ncols=dataset->ncols;
+    n_obs=dataset->n_obs;
+    title=&dataset->headers->tags[0];
+    long_title=&dataset->title;
+
+    fprintf(fptr,"Data set: %s (%s)\n",*title, *long_title);
+    fprintf(fptr,"Number of parameters:\t%d\n",ncols);
+    fprintf(fptr,"Number of observations:\t%d\n",n_obs);
+    fprintf(fptr,"\nVariables:  \t");
+    for(i=1; i<=ncols; i++) {
+	fprintf(fptr,"%s\t",dataset->headers->tags[i]);
+    }
+    fprintf(fptr,"\n");
+    for(i=0;i<n_obs;i++) {
+	fprintf(fptr,"#%-3d %-8s\t",i+1,dataset->obs_id->tags[i]);
+	for(j=0;j<ncols;j++) {
+	    fprintf(fptr,"%6.3f\t",dataset->data->data[i*ncols+j]);
+	}
+	fprintf(fptr,"\n");
+    }
+}                        
+ /**********************************************************************
+ * compute_datastats(t_dataset *D,t_datastats *S)
+ **********************************************************************/
+void compute_datastats(t_dataset *D, t_datastats *S) {
+
+
+    t_matrix	*V;
+    t_matrix	*T; // transposed intermediate
+    int		i,j;
+    double	norm;	//to divide matrix by number of data lines
+
+    S->means  =matrix_new(1,D->ncols);
+    S->sdevs  =matrix_new(1,D->ncols);
+    D->data_cr=matrix_new(D->n_obs, D->ncols);
+    norm=1/(double)D->n_obs;
+    //compute means and standard deviation of each vector
+    for(j=0;j<D->ncols;j++){
+	V=matrix_get_vector(D->data,j);
+	S->means->data[j]=mean(V);
+	S->sdevs->data[j]=sdev(V);
+	matrix_free(V);
+	for(i=0;i<D->n_obs;i++) {
+	    // put centered reduced data in D->data_cr
+	    D->data_cr->data[i*D->ncols+j] = (D->data->data[i*D->ncols+j] - S->means->data[j])/S->sdevs->data[j];
+	}
+    }
+    T=matrix_transpose(D->data_cr);
+    S->covar=matrix_prod(T, D->data_cr);
+    matrix_free(T);
+    S->correl=matrix_scale(S->covar,norm);
+}
+/**********************************************************************
+* read_dataset: read data file and return a t_dataset structure 
+*   The first string on first line is the name of data set (no spaces)
+*   the rest of the first line iare headings, separated by spaces or tabs
+*   The number of headings defines the number of characters (columns)
+*   Underscores in headings are turned into spaces
+*   TODO if a line starts with ABBREV, the strings are abbreviated headings
+*	 manage escape characters such as \' (apostrophe)
 **********************************************************************/
 int	read_dataset(const t_fname fname, t_dataset *dataset) {
-
     FILE	*fichier_data; 
     char	s[LINE_LENGTH];
     t_tag	tag;
-    int		nrows, ncols;
+    int		nrows;
     char	*ptr;
     t_matrix	*V;		// hVector
 
@@ -109,13 +184,6 @@ int	read_dataset(const t_fname fname, t_dataset *dataset) {
     }
     printf("Reading data from file: %s\n", fname);
     // read first line (headings, separated by spaces or tabs)
-    // first string is the name of data set (no spaces)
-    // following strings are headings (names of parameters)
-    // number of headings defines number of characters (columns)
-    // Underscores in headings are turned into spaces
-    // TODO if a line starts with ABBREV, the strings are abbreviated headings
-
-    ncols=0;
     while (fgets(s, sizeof(s), fichier_data) != NULL) {
 	if(s[0]!='#') break;
     }
@@ -126,14 +194,9 @@ int	read_dataset(const t_fname fname, t_dataset *dataset) {
     s[strlen(s)-1]='\0';  // remove NL at the end
     // read first line = name + headers
     dataset->headers=str2headers(s);  // first colunm are labels
-//------ -----------------------------------------------------------------------
-printf("%d strings, %d parameters.\n",dataset->headers->ntags,dataset->headers->ntags-1);
-int i;
-for(i=0;i<dataset->headers->ntags;i++) printf("%s\n",dataset->headers->tags[i]);
-//------------------------------------------------------------------------------    
-
     V=matrix_new(1,dataset->headers->ntags-1);
     dataset->data=matrix_new(1,dataset->headers->ntags-1);
+    dataset->ncols=dataset->headers->ntags-1;
     nrows=0;
     dataset->obs_id=calloc(1,sizeof(t_headers));
     dataset->obs_id->tags=NULL;
@@ -152,7 +215,6 @@ for(i=0;i<dataset->headers->ntags;i++) printf("%s\n",dataset->headers->tags[i]);
 	// ptr shift: eliminates the first label from s before reading numerical values
 	ptr=s+strlen(tag);
 	s[strlen(s)-1]='\0';  // remove NL at the end
-printf("=%s= \n",ptr);
 	if (str2hvector(ptr, V)==0) {
 	    fprintf(stderr, "Error: reading line %d of input file %s.\n",nrows, fname);
 		 exit(8);
@@ -165,13 +227,10 @@ printf("=%s= \n",ptr);
     // For the moment long title=short title (Headers[0])
     strcpy(dataset->title,dataset->headers->tags[0]);
     dataset->n_obs=nrows;
-    dataset->ncols=ncols;
     dataset->obs_id->ntags=nrows;
     matrix_free(V);
     fclose(fichier_data);
     return 0;
-
-
  }
 /**********************************************************************
  * str2headers: converts str in a vector of headers 
@@ -226,16 +285,14 @@ int str2hvector(char *linestr, t_matrix *v) {
     int		 k;	// indice de position dans la chaine
     int		 l;     // indice de position dans le vecteur horizontal
     
-//printf("___________________\n%s\n",linestr);
-
     s[0]='\0'; 
     k=0;                        
     l=0;
-    while(k<LINE_LENGTH && l<v->nrows){
+    while(k<LINE_LENGTH && l<v->ncols){
         j=0;
         if (linestr[k]=='\0') break;
         while (linestr[k]==' ' || linestr[k]=='\t') k++; /* skip leading spaces */
-        while (linestr[k]!=' ' && linestr[k]!='\t' && linestr[k]!='\0') /* read next float value */
+        while (linestr[k]!=' ' && linestr[k]!='\t' && linestr[k]!='\0') /* read next float*/
         {
     		 s[j]=linestr[k];
     		 k++;
@@ -247,10 +304,10 @@ int str2hvector(char *linestr, t_matrix *v) {
 		     printf("Error: %s is not a floating point number.\n", s);
     		 return(1);
         }
-//printf("s: %s\tx:%4.2f\n",s,v[l]);
+	//printf("s: %s\tx:%4.2f\n",s,v->data[l]);       //for debug
         l++;
     };
-if(l==v->nrows) return l;
+if(l==v->ncols) return l;
 return 0;  /* the line doesn't have enough float values */
 }
          

@@ -6,13 +6,19 @@
 #ifndef __libal_h__
 #define __libal_h__
 
+#define TAG_LENGTH	20		// length of labels / tags
 typedef	struct  {   int	    nrows;
 		    int	    ncols;
-		    double  *data; }	t_matrix;
-//------------------------------------------------------------------------------
+		    double  *data; 
+		}t_matrix;
+typedef	char	    t_tag   [TAG_LENGTH];       // label type
+typedef	struct	{   int		ntags;		// number of tags in Headers array
+		    t_tag	*tags;		// dynamic array of tags
+		}t_headers;			// t_headers=vector of tags     //------------------------------------------------------------------------------
 
 t_matrix*   matrix_new(int nrows, int ncols);
 void	    matrix_free(t_matrix *m);
+void	    matrix_free_headers(t_headers *h);
 t_matrix*   matrix_new_vector(int n, void *p);
 void*	    matrix_add_rows(t_matrix *m, int n);
 void	    matrix_printf(FILE *f, const t_matrix *M, char* format, char* msg);

@@ -49,6 +49,13 @@ void	matrix_free(t_matrix *m){
 	free(m);
 }
 /**********************************************************************
+ * void	    matrix_free_headers(t_headers *h);
+ **********************************************************************/
+void	    matrix_free_headers(t_headers *h){
+    free(h->tags);
+    free(h);
+}
+/**********************************************************************
  * matrix_new_vector: creates a new vector(n). returns a t_matrix[*,1]
  *	       fills it from *p if p not NULL
  **********************************************************************/
