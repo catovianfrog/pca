@@ -86,11 +86,25 @@ int main( int argc, char *argv[]) {        // args not used so far
     print_datastats(stdout,dataset,datastats);
     pca->e_values=matrix_new(1,dataset->ncols);
     iterations=matrix_eigenvalues(datastats->correl, pca->e_values,PRECISION);
-    printf("%d iterations.\n",iterations);
     if(iterations==0) goto error;
+    pca->inertia=matrix_ev_inertia(pca->e_values);
+    pca->e_vectors=matrix_eigenvectors(datastats->correl, pca->e_values);
+    pca->princ_comp=matrix_prod(dataset->data_cr,pca->e_vectors);
+
+
+
+    
+    matrix_print(stdout,pca->e_values,"eigenvalues");
+    matrix_print(stdout,pca->inertia,"inertia");
+    matrix_print(stdout,pca->e_vectors,"eigenvectors");
+    matrix_print(stdout,pca->princ_comp,"Pincipal components");
 
 
 error:
+    matrix_free(pca->princ_comp);
+    matrix_free(pca->e_vectors);
+    matrix_free(pca->inertia);
+    matrix_free(pca->e_vectors);
     matrix_free(pca->e_values);
     free(pca);
     dataset_free(dataset);

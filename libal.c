@@ -694,13 +694,13 @@ t_matrix* matrix_ev_inertia(const t_matrix *eigenvalues){
     int	    i;
     double    s=0;
     t_matrix  *inertia;
-    inertia=matrix_new(eigenvalues->nrows,1);
+    inertia=matrix_new(1,eigenvalues->ncols);
     if(inertia == NULL) {
 	fprintf(stderr,"Error: not enough memory in matrix_inertia. Abort\n");
 	exit(16);
     }
-    for(i=0;i<eigenvalues->nrows;i++) s+=fabs(eigenvalues->data[i]);
-    for(i=0;i<eigenvalues->nrows;i++) inertia->data[i]=fabs(eigenvalues->data[i])/s;
+    for(i=0;i<eigenvalues->ncols;i++) s+=fabs(eigenvalues->data[i]);
+    for(i=0;i<eigenvalues->ncols;i++) inertia->data[i]=fabs(eigenvalues->data[i])/s;
     return inertia;
 }
 /**********************************************************************
