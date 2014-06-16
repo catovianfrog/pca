@@ -17,16 +17,17 @@
 #include "libal.h"
 
 //---------------------------------------------------------------------
-#define MAX_ITERATION  1e+5	    // max number of iterations for eigenvalues
-#define PRECISION      1e-6	    // stop iterations when residue < PRECISION
+#define MAX_ITERATION  1e+4	    // max number of iterations for eigenvalues
+#define PRECISION      1e-8	    // stop iterations when residue < PRECISION
 #define LINE_LENGTH    1000	    // max length of data file lines
 #define NAME_LENGTH    255	    // length of strings & labels
 #define DOUBLE_FORMAT  "%9.3f"	    // default printing format for double precision floats
 //*********************************************************************
 char		*version	=   VERSION;
-const double	g_precision	=   PRECISION;
-const double	g_max_iterations=   MAX_ITERATION;
-//------------------------------------------------------------------------------
+const double   g_precision     =   PRECISION;
+const double   g_max_iterations=   MAX_ITERATION;
+
+
 /**********************************************************************
  *  matrix_new: returns a new matrix, or NULL if not enough memory
  *		all new matrices and vectors are initialized with 0

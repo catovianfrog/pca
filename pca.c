@@ -42,10 +42,10 @@ typedef struct	{   /**** ACP data structure ****/
 		    t_dataset   *data;		// pointer to dataset (dont forget to assign it;
 		     				// we are not in C++ !) 
     		    t_datastats *stats;		// pointer to data base statistics
-		    t_matrix    e_values;	// eigenvalues
-		    t_matrix    inertia;	// inertia of eigenvalues
-		    t_matrix    e_vectors;	// eigenvectors
-		    t_matrix    princ_comp;	// principal components (coordinates
+		    t_matrix    *e_values;	// eigenvalues
+		    t_matrix    *inertia;	// inertia of eigenvalues
+		    t_matrix    *e_vectors;	// eigenvectors
+		    t_matrix    *princ_comp;	// principal components (coordinates
 		    //of observations in eigenvectors rotated coordinate system)
 		} t_acp_data;
 const char	*g_version =VERSION;
@@ -55,9 +55,10 @@ int	read_dataset(const t_fname fname, t_dataset *dataset);
 t_headers *str2headers(char *linestr);
 int	str2hvector(char *linestr, t_matrix *v);
 void	dataset_free(t_dataset *d);
+void	datastats_free(t_datastats *d);
 void	print_dataset(FILE *fptr, t_dataset *dataset);
 void	compute_datastats(t_dataset *D,t_datastats *S);
-
+void	print_datastats(FILE *fptr, t_dataset *D, t_datastats *S);
 
 /**********************************************************************
  *		    M A I N
@@ -70,6 +71,7 @@ int main( int argc, char *argv[]) {        // args not used so far
     t_dataset	*dataset;	// structure containing input data
     t_datastats	*datastats;     // structure containing dataset base statistics
     t_acp_data	*pca;           // structure containing dataset PCA results
+    int		iterations;	// number of iterations to computec eigenvalues
                  
     printf("%s, v%s\n",g_progname, g_version);
     // didn't put memory checks here. Shouldn't be needed.
@@ -81,10 +83,18 @@ int main( int argc, char *argv[]) {        // args not used so far
     read_dataset(in_fname,dataset);
     print_dataset(stdout,dataset);
     compute_datastats(dataset, datastats);
+    print_datastats(stdout,dataset,datastats);
+    pca->e_values=matrix_new(1,dataset->ncols);
+    iterations=matrix_eigenvalues(datastats->correl, pca->e_values,PRECISION);
+    printf("%d iterations.\n",iterations);
+    if(iterations==0) goto error;
 
+
+error:
+    matrix_free(pca->e_values);
     free(pca);
-    free(datastats);
     dataset_free(dataset);
+    datastats_free(datastats);
     return 0;
 }
 /**********************************************************************
@@ -95,6 +105,17 @@ int main( int argc, char *argv[]) {        // args not used so far
      free(d->obs_id);
      matrix_free_headers(d->headers);
      matrix_free(d->data);
+     matrix_free(d->data_cr);
+     free(d);
+ }
+/**********************************************************************
+ * datastats_free: free dynamic memory of argument *datastats
+ **********************************************************************/
+ void	datastats_free(t_datastats *d) {
+     matrix_free(d->means);
+     matrix_free(d->sdevs);
+     matrix_free(d->covar);
+     matrix_free(d->correl);
      free(d);
  }
 /**********************************************************************
@@ -129,6 +150,65 @@ void print_dataset(FILE *fptr, t_dataset *dataset) {
 	fprintf(fptr,"\n");
     }
 }                        
+
+/**********************************************************************
+* print_datastats(FILE *fptr, t_dataset *D, t_datastats *S)
+**********************************************************************/
+void print_datastats(FILE *fptr, t_dataset *D, t_datastats *S) {
+    int		i,j;
+    int		ncols;
+
+    ncols=D->ncols;
+    fprintf(fptr,"\n#-----------\t");
+    for(i=1; i<=ncols; i++) {
+	fprintf(fptr,"%s\t",D->headers->tags[i]);
+    }
+    fprintf(fptr,"\n");
+    fprintf(fptr,"# Mean:     \t");
+    for(j=0;j<ncols;j++) {
+	fprintf(fptr,"%6.3f\t",S->means->data[j]);
+    }
+    fprintf(fptr,"\n");
+    fprintf(fptr,"# Std Dev:  \t");
+    for(j=0;j<ncols;j++) {
+	fprintf(fptr,"%6.3f\t",S->sdevs->data[j]);
+    }
+    fprintf(fptr,"\n");
+
+/**************************** OPTIONAL. Prints centered reduced dataset
+    // print centered reduced data matrix
+    fprintf(fptr,"\n# Centered reduced data");
+    fprintf(fptr,"\n------------\t");
+    for(i=1; i<=ncols; i++) {
+	fprintf(fptr,"%s\t",D->headers->tags[i]);
+    }
+    fprintf(fptr,"\n");
+
+    int	 n_obs;
+    n_obs=D->n_obs;
+    for(i=0;i<n_obs;i++) {
+	fprintf(fptr,"#%-3d %s\t",i+1,D->obs_id->tags[i]);
+	for(j=0;j<ncols;j++) {
+	    fprintf(fptr,"% 4.2f\t",D->data_cr->data[i*ncols+j]);
+	}
+	fprintf(fptr,"\n");
+    }
+// ------------- end optional printing ---------------------*/
+    // print correlations matrix
+    fprintf(fptr,"\n#Correlations\t");
+    for(i=1; i<=ncols; i++) {
+	fprintf(fptr,"%s\t",D->headers->tags[i]);
+    }
+    fprintf(fptr,"\n");
+    for(i=0;i<ncols;i++) {
+	fprintf(fptr,"# %-10s\t",D->headers->tags[i+1]);
+	for(j=0;j<ncols;j++) {
+	    fprintf(fptr,"%6.3f\t",S->correl->data[i*ncols+j]);
+	}
+	fprintf(fptr,"\n");
+    }
+}
+ 
  /**********************************************************************
  * compute_datastats(t_dataset *D,t_datastats *S)
  **********************************************************************/
@@ -195,7 +275,7 @@ int	read_dataset(const t_fname fname, t_dataset *dataset) {
     // read first line = name + headers
     dataset->headers=str2headers(s);  // first colunm are labels
     V=matrix_new(1,dataset->headers->ntags-1);
-    dataset->data=matrix_new(1,dataset->headers->ntags-1);
+    dataset->data=matrix_new(0,dataset->headers->ntags-1);
     dataset->ncols=dataset->headers->ntags-1;
     nrows=0;
     dataset->obs_id=calloc(1,sizeof(t_headers));
