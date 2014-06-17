@@ -4,7 +4,7 @@
  */
     #define	VERSION "2.0"
 /*  Author:	Bruno S. Charrière
- *  Date:	15.06.2014
+ *  Date:	18.06.2014
  *****************************************************************************/
 #include <stdio.h>
 #define  _GNU_SOURCE
@@ -38,7 +38,7 @@ typedef struct 	{   int		order;		// order of the dataset (ncols)
 		    t_matrix    *covar;		// covariance matrix
 		    t_matrix    *correl;		// correlation matrix
 		} t_datastats;
-typedef struct	{   /**** ACP data structure ****/
+typedef struct	{   /**** PCA data structure ****/
 		    t_dataset   *data;		// pointer to dataset (dont forget to assign it;
 		     				// we are not in C++ !) 
     		    t_datastats *stats;		// pointer to data base statistics
@@ -47,7 +47,7 @@ typedef struct	{   /**** ACP data structure ****/
 		    t_matrix    *e_vectors;	// eigenvectors
 		    t_matrix    *princ_comp;	// principal components (coordinates
 		    //of observations in eigenvectors rotated coordinate system)
-		} t_acp_data;
+		} t_pca_data;
 const char	*g_version =VERSION;
 const char	*g_progname=PROGNAME;
 //---------------------------function prototypes--------------------------------
@@ -59,6 +59,13 @@ void	datastats_free(t_datastats *d);
 void	print_dataset(FILE *fptr, t_dataset *dataset);
 void	compute_datastats(t_dataset *D,t_datastats *S);
 void	print_datastats(FILE *fptr, t_dataset *D, t_datastats *S);
+void	print_pca_results (FILE* fptr, t_pca_data *pca);
+void	print_eigenvalues (FILE *fptr, t_pca_data *pca);
+void    print_eigenvectors(FILE *fptr, t_pca_data *pca);
+void	print_princ_comp  (FILE *fptr, t_pca_data *pca);
+void	print_correlation_circle(FILE *fptr, t_pca_data *pca);
+
+
 
 /**********************************************************************
  *		    M A I N
@@ -70,7 +77,7 @@ int main( int argc, char *argv[]) {        // args not used so far
 //    char	outfname[NAME_LENGTH] = DEFAULT_OUT;
     t_dataset	*dataset;	// structure containing input data
     t_datastats	*datastats;     // structure containing dataset base statistics
-    t_acp_data	*pca;           // structure containing dataset PCA results
+    t_pca_data	*pca;           // structure containing dataset PCA results
     int		iterations;	// number of iterations to computec eigenvalues
                  
     printf("%s, v%s\n",g_progname, g_version);
@@ -90,22 +97,16 @@ int main( int argc, char *argv[]) {        // args not used so far
     pca->inertia=matrix_ev_inertia(pca->e_values);
     pca->e_vectors=matrix_eigenvectors(datastats->correl, pca->e_values);
     pca->princ_comp=matrix_prod(dataset->data_cr,pca->e_vectors);
-
+    print_pca_results(stdout,pca);
 
 
     
-    matrix_print(stdout,pca->e_values,"eigenvalues");
-    matrix_print(stdout,pca->inertia,"inertia");
-    matrix_print(stdout,pca->e_vectors,"eigenvectors");
-    matrix_print(stdout,pca->princ_comp,"Pincipal components");
-
-
 error:
     matrix_free(pca->princ_comp);
     matrix_free(pca->e_vectors);
     matrix_free(pca->inertia);
-    matrix_free(pca->e_vectors);
     matrix_free(pca->e_values);
+    //don't free dataset & datstats as they point to other structures
     free(pca);
     dataset_free(dataset);
     datastats_free(datastats);
@@ -222,7 +223,113 @@ void print_datastats(FILE *fptr, t_dataset *D, t_datastats *S) {
 	fprintf(fptr,"\n");
     }
 }
- 
+ /**********************************************************************
+ * print_pca_results(FILE* fptr, t_pca_data *pca);
+ *	prints the results of the analysis: eigenvalues, inertia,
+ *	eigenvectors (optional),principal components (i.e. data points
+ *	coordinates in eigenvectors coordinates system), and variables 
+ *	coordinates for the correlation circles
+ **********************************************************************/
+ void	print_pca_results(FILE* fptr, t_pca_data *pca) {
+
+    print_eigenvalues(fptr, pca);
+    print_eigenvectors(fptr, pca);
+    print_princ_comp(fptr, pca);
+    print_correlation_circle(fptr, pca);
+    fprintf(fptr,"\n\n");
+ }                      
+/**********************************************************************
+ * print_eigenvalues(FILE *fptr, t_pca_data *pca);
+ *	prints eigenvalues, their inertia and cumulated inertia in file *fptr
+ **********************************************************************/
+ void print_eigenvalues(FILE *fptr, t_pca_data *pca) {
+     int	j,n;
+     double	ci;	// cumulated iniertia
+
+     n=pca->data->ncols;
+     fprintf(fptr,"\n#---- PCA ---\t");
+     for(j=0;j<n;j++) {
+	 fprintf(fptr,"PC%-3d\t",j+1);
+     }
+     fprintf(fptr,"\n# Eigenvalues:\t");
+     for(j=0;j<n;j++) { 
+	 fprintf(fptr,"%6.3f\t",pca->e_values->data[j]);
+     }
+     fprintf(fptr,"\n# Inertia:\t"); 
+     for(j=0;j<n;j++) {
+	 fprintf(fptr,"%3d%c\t",(int)(pca->inertia->data[j]*100),'%');
+     }
+     fprintf(fptr,"\n# Cum. inertia:\t");
+     ci=0;
+     for(j=0;j<n;j++) {
+ 	 ci+=pca->inertia->data[j];
+ 	 fprintf(fptr,"%3d%c\t",(int)(ci*100),'%');
+     }
+ }     
+
+/**********************************************************************
+ * print_eigenvectors(FILE *fptr, t_pca_data *pca);
+ *	prints the eigenvectors coordinates
+ *	(directions of the principal components axes)
+ *	This print out is optional, not used in further analysis
+ **********************************************************************/
+void    print_eigenvectors(FILE *fptr, t_pca_data *pca){
+
+    int i,j,n;
+    n=pca->data->ncols;
+    fprintf(fptr,"\n\n#---- Eigenvectors ----\t");
+    for(i=0;i<n;i++) {
+	fprintf(fptr,"\nPC%d\t\t",i+1);
+	for(j=0;j<n;j++) {
+	    fprintf(fptr,"%6.3f\t",pca->e_vectors->data[i*n+j]);
+	}
+    }
+}
+ /**********************************************************************
+* print_princ_comp(FILE *fptr, t_pca_data *pca)
+*	prints the coordinates of the observations in the eigenvectors 
+*	coordinate system
+**********************************************************************/
+void print_princ_comp(FILE *fptr, t_pca_data *pca) {
+
+    int		i,j;
+    int		ncols, n_obs;
+
+    ncols=pca->data->ncols;
+    n_obs=pca->data->n_obs;
+                                                  
+    fprintf(fptr,"\n\n#--- Principal Components -------");
+    fprintf(fptr,"\n    axes     \t");
+    for(j=0;j<ncols;j++) {
+	 fprintf(fptr,"PC%-3d\t",j+1);
+    }
+    for(i=0;i<n_obs;i++) {
+       fprintf(fptr,"\n%-8s\t",pca->data->obs_id->tags[i]);
+       for(j=0;j<ncols;j++) {
+           fprintf(fptr,"%6.3f\t",pca->princ_comp->data[i*ncols+j]);
+       }
+    }
+    fprintf(fptr,"\n");
+} 
+/**********************************************************************
+ * print_correlation_circle(FILE *fptr, t_pca_data *pca);
+ **********************************************************************/
+void	print_correlation_circle(FILE *fptr, t_pca_data *pca) {
+
+    int	    i,j;
+    int	    n;
+
+    n=pca->data->ncols;
+    fprintf(fptr,"\n#--- Correlations Circle -------");
+    for(i=0;i<n;i++) {
+	fprintf(fptr,"\n%-8s\t",pca->data->headers->tags[i+1]);
+	for(j=0;j<n;j++) {
+	    fprintf(fptr,"%6.3f\t",pca->e_vectors->data[i*n+j]*sqrt(pca->e_values->data[j]));
+	}
+    }
+    fprintf(fptr,"\n");
+}
+                                            
  /**********************************************************************
  * compute_datastats(t_dataset *D,t_datastats *S)
  **********************************************************************/
