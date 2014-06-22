@@ -3,13 +3,16 @@ pca
 
 Principal component analysis software, and linear algebra library
 
-	    V E R S I O N   H I S T O R Y
-	    =============================
+#### CHANGE LOG
+
 v0.9 
 
-    Start from initial linear algebra stub (qr.c)
+Start from initial linear algebra stub (qr.c)
+
+
 v1.0
-    Fully working PCA version.
+
+Fully working PCA version.
     All the linear algebra (matrix) functions are integrated
     All the data are stored statically, in the stack.
     the mlatrices are stored as two dimensional arrays, therefore
@@ -19,7 +22,8 @@ v1.0
     running the programm typically requires 2 Gb of memory!
 
 v1.2
-    All data sets (in main and in functions) are allocated dynamically
+
+All data sets (in main and in functions) are allocated dynamically
     and stored in the heap. Also using syslinGauss instead of syslinQR uses much 
     less memory (clearly visible with valgrind). However, size of matrices and data 
     set is still fixed (inevitable because matrices are two-dimensional arrays).
@@ -28,7 +32,8 @@ v1.2
     Also corrected a bug in str2headers (added a space at the end of linestr)
 
 v2.0
-    *Complete overhaul*
+
+__Complete overhaul__
     Programme split between a linear algebra library (libal.c) and a main pca.c
     principal componet analysis programme.
     *libal.c* groups  basic statistics functions (mean, standard deviation, 
@@ -37,7 +42,7 @@ v2.0
     the matrix operations including transpose, scaling, porduct, inversion,
     linear system resolution, QR transformation, eigenvalues, eigevctors, etc..
 
-    *pca.c* is the main PCA resolution programme. It reads data from  a 
+**pca.c** is the main PCA resolution programme. It reads data from  a 
     default input programme "pca_input.dat", calculates the pca and displays it
     screen and text file.
     
