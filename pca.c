@@ -321,6 +321,10 @@ void	print_correlation_circle(FILE *fptr, t_pca_data *pca) {
 
     n=pca->data->ncols;
     fprintf(fptr,"\n#--- Correlations Circle -------");
+    fprintf(fptr,"\n    axes     \t");
+    (j=0;j<n;j++) {
+	 fprintf(fptr,"PC%-3d\t",j+1);
+    }
     for(i=0;i<n;i++) {
 	fprintf(fptr,"\n%-8s\t",pca->data->headers->tags[i+1]);
 	for(j=0;j<n;j++) {

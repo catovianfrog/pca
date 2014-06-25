@@ -4,6 +4,7 @@ LDFLAGS = -lm
 pca: 	pca.c libal.o dbg.h
 	gcc $(CFLAGS)  -c pca.c  $(LDFLAGS)   
 	gcc $(CFLAGS)  pca.o libal.o -o pca  $(LDFLAGS)   
+	markdown README.md >readme.html
 
 libal.o: libal.c dbg.h
 	gcc $(CFLAGS)  -c libal.c  $(LDFLAGS)   
