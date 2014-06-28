@@ -1,14 +1,16 @@
 CFLAGS=-Wall -g -DNDBUG -O0
 LDFLAGS = -lm
 
-pca: 	pca.c libal.o dbg.h
+pca: 	pca.c libal.o dbg.h libstring.o
 	gcc $(CFLAGS)  -c pca.c  $(LDFLAGS)   
-	gcc $(CFLAGS)  pca.o libal.o -o pca  $(LDFLAGS)   
+	gcc $(CFLAGS)  pca.o libal.o libstring.o -o pca  $(LDFLAGS)   
 	markdown README.md >readme.html
 
 libal.o: libal.c dbg.h
 	gcc $(CFLAGS)  -c libal.c  $(LDFLAGS)   
 
+libstring.o:	libstring.c
+	gcc $(CFLAGS)  -c libstring.c    
 
 clean:
 	rm -f *.o

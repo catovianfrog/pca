@@ -152,5 +152,5 @@ set loadpath
 set fontpath 
 set fit noerrorvariables
 GNUTERM = "wxt"
-plot [-1:1] [-1:1] [-1:1] "cercle" using 2:3:1 title "" with labels font "Times,8"
+plot [-1:1] [-1:1] [-1:1] "cercle-budget" using 2:3:1 title "" with labels font "Times,8"
 #    EOF
