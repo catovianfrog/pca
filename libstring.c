@@ -17,11 +17,11 @@ char** get_token(int word_beg, int word_end, int *word_count, char *buffer, char
     (*word_count)++;
     buffer[word_end+1]='\0'; // terminate string
     words=realloc(words,*(word_count)*sizeof(words)); //extend size of word array
-    words[*word_count-1]=calloc(1,word_end-word_beg+1);
+    words[*word_count-1]=calloc(word_end-word_beg+2,sizeof(char));
     strcpy(words[*word_count-1],&buffer[word_beg]);	// token points to strt of word
     return words;
 }
- /**********************************************************************
+/**********************************************************************
 *	    Tokenize
 * This function splits a string into words or substrings
 **********************************************************************/

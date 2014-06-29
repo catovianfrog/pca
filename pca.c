@@ -53,7 +53,6 @@ const char	*g_version =VERSION;
 const char	*g_progname=PROGNAME;
 //---------------------------function prototypes--------------------------------
 int	read_dataset(const t_fname fname, t_dataset *dataset);
-t_headers *str2headers(char *linestr);
 int	str2hvector(char *linestr, t_matrix *v);
 void	dataset_free(t_dataset *d);
 void	datastats_free(t_datastats *d);
@@ -116,15 +115,15 @@ error:
 /**********************************************************************
  * dataset_free: free dynamic memory of argument *dataset
  **********************************************************************/
- void	dataset_free(t_dataset *d) {
-     int    i;
-     for(i=0;i<d->ncols;i++) free(d->headers[i]);
-     for(i=0;i<d->ncols;i++) free(d->obs_id[i]);
-     free(d->headers);
-     free(d->obs_id);
-     matrix_free(d->data);
-     matrix_free(d->data_cr);
-     free(d);
+void	dataset_free(t_dataset *d) {
+    int    i;
+    for(i=0;i<d->ncols+1;i++) free(d->headers[i]);
+    for(i=0;i<d->n_obs;i++) free(d->obs_id[i]);
+    free(d->headers);
+    free(d->obs_id);
+    matrix_free(d->data);
+    matrix_free(d->data_cr);
+    free(d);
  }
 /**********************************************************************
  * datastats_free: free dynamic memory of argument *datastats
@@ -441,61 +440,6 @@ int read_dataset(const t_fname fname, t_dataset *dataset) {
     fclose(fichier_data);
     return 0;
  }
-/**********************************************************************
- * str2headers: converts str in a vector of headers 
- *	    headers are separated by spaces or tabs
- *	    underscores are turned into spaces in headers
- *	    returns the number of headers read
- * TODO	    manage quotes and escape sequences in text data
- **********************************************************************/
-t_headers *str2headers(char *linestr) {
-/*
-    t_headers	 *headers;
-    t_tag	 s;     // string used to build the header substr
-    int		 j;     // indice de position du caractère  du header
-    int		 k;	// indice de position dans la chaine
-    int		cols;	// number of headers/columns in data set
-    
-    headers=calloc(1,sizeof(t_headers));   
-    headers->tags=NULL;
-    // error handling here
-    k=0;                        
-    cols=0;
-    strcat(linestr," ");  // add a space at the end to terminate the headers counting
-    while(k<strlen(linestr)){
-        if(cols>=MAX_COLS) {
-	    fprintf(stderr,"Error: to many parameters in data file (max comlumns: %d).\n",MAX_COLS);
-	    exit(8);
-	}
-        j=0;
-	s[0]='\0';
-        while (linestr[k]==' ' || linestr[k]=='\t') k++; 
-        while (linestr[k]!=' ' && linestr[k]!='\t' && linestr[k]!='\0') // read next header
-        {
-    		 s[j]=linestr[k]; 
-		 if(s[j]=='_') {s[j]=' ';}; //transform underscores into spaces
-    		 k++;
-    		 j++;
-        }
-        s[j]='\0';
-	cols++;
-	headers->tags=realloc(headers->tags,sizeof(t_tag)*cols);
-	strcpy(headers->tags[cols-1],s);
-    }         */
-    t_headers	*headers;
-    char	**words;
-    int		nwords;
-    int		i;
-
-    headers=calloc(1,sizeof(headers));   
-    words=tokenize(linestr, &nwords);
-    for(i=0;i<nwords; i++) {
-	printf("\t%d\t%s\n",i+1,words[i]);
-    }
-    headers->ntags=nwords;
-    headers->tags=words;
-    return headers;
-}                                                    
 /**********************************************************************
  * str2hvector: converts the string into a vector of N=v->nrows reals
  *		argument v already exists, and is just filled in
