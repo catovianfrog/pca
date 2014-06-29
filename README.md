@@ -46,5 +46,7 @@ __Complete overhaul__
     default input programme "pca_input.dat", calculates the pca and displays it
     screen and text file.
     
+v2.1.1
+Version 2 works fully, no memory leaks
 
  
