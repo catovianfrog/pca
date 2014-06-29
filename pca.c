@@ -53,7 +53,6 @@ const char	*g_version =VERSION;
 const char	*g_progname=PROGNAME;
 //---------------------------function prototypes--------------------------------
 int	read_dataset(const t_fname fname, t_dataset *dataset);
-int	str2hvector(char *linestr, t_matrix *v);
 void	dataset_free(t_dataset *d);
 void	datastats_free(t_datastats *d);
 void	print_dataset(FILE *fptr, t_dataset *dataset);
@@ -439,21 +438,4 @@ int read_dataset(const t_fname fname, t_dataset *dataset) {
     fclose(fichier_data);
     return 0;
  }
-/**********************************************************************
- * matrix_str2hvector: converts the string into a vector of N=v->nrows 
- *	floats. If matrix argument v doesn't exist, it is allocated
- *	If v already exists, it is just filled in.
- **********************************************************************/
-int matrix_str2hvector(char *linestr, t_matrix *v) {
-    int	    nbval,i;
-    char    **valuestrings;  // arrays of number strings
-    valuestrings=tokenize(linestr,&nbval);
-    v->ncols=nbval;
-    for(i=0;i<nbval;i++) {
-	if (sscanf(valuestrings[i], "%lf", &v->data[i]) != 1) v->data[i]=nan(""); 
-	free(valuestrings[i]);
-    }
-    free(valuestrings);
-    return nbval;
-}
-         
+

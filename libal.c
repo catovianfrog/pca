@@ -754,3 +754,21 @@ double sdev_sample(t_matrix *V) {
     return sqrt(variance_sample(V));
 }
 
+/**********************************************************************
+ * matrix_str2hvector: converts the string into a vector of N=v->nrows 
+ *	floats. If matrix argument v doesn't exist, it is allocated
+ *	If v already exists, it is just filled in.
+ **********************************************************************/
+int matrix_str2hvector(char *linestr, t_matrix *v) {
+    int	    nbval,i;
+    char    **valuestrings;  // arrays of number strings
+    valuestrings=tokenize(linestr,&nbval);
+    if(v==NULL) v=matrix_new(1,nbval); else v->ncols=nbval;
+    for(i=0;i<nbval;i++) {
+	if (sscanf(valuestrings[i], "%lf", &v->data[i]) != 1) v->data[i]=nan(""); 
+	free(valuestrings[i]);
+    }
+    free(valuestrings);
+    return nbval;
+}
+         
