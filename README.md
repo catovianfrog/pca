@@ -46,5 +46,9 @@ __Complete overhaul__
     default input programme "pca_input.dat", calculates the pca and displays it
     screen and text file.
     
+v2.1 -- 
+    Uses **libstring** library function 'tokenize()' instead of internal 'str2headers()'
+    to read headers. v2.1.2 is the first fully working version (without memory
+    leaks) that uses _libstring.c_.
 
- 
+
