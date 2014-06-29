@@ -1,4 +1,18 @@
-write outpout to file
-read arguments
-write man-page
+str2hvector
+----------
+
+Move str2hvector to libal library.
+
+allocate *V if V==NULL, otherwise fill *V
+
+Arrays of Styrings ( _libstring_)
+---------------------------------
+
+Write up a routine in __libstring.c__ to free arrays of strings
+
+
+###Other
+
+1. read arguments
+2. write man-page
 

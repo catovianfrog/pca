@@ -15,6 +15,7 @@
 #include <math.h> 
 #include "dbg.h"		    // error handling macros
 #include "libal.h"
+#include "libstring.h"
 
 //---------------------------------------------------------------------
 #define LINE_LENGTH    1000	    // max length of data file lines

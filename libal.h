@@ -38,6 +38,7 @@ double	    matrix_trace(const t_matrix* M);
 double	    matrix_lower_residue(const t_matrix *M);
 t_matrix*   matrix_get_vector(const t_matrix *M, const int n);
 int	    matrix_set_vector(t_matrix *M,const int n, const t_matrix *V);
+int	    matrix_str2hvector(char *linestr, t_matrix *v);
 t_matrix*   matrix_get_block(const t_matrix *M,int n,int m,int i0,int j0);
 int         matrix_set_block(const t_matrix *S,t_matrix *D,int i0,int j0);
 int	    matrix_qr_decomp(t_matrix *A, t_matrix *Q, t_matrix *R);

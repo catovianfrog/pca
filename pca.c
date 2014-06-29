@@ -402,12 +402,12 @@ int read_dataset(const t_fname fname, t_dataset *dataset) {
     // read first line = name + headers
     dataset->headers=tokenize(s,&ncols);  // ncols= nb parameters+1 (title)
     ncols--;	// parameter is dataset title TODO this needs to be changed
-    V=matrix_new(1,ncols);
     dataset->data=matrix_new(0,ncols);
     dataset->ncols=ncols;
     nrows=0;
     dataset->obs_id=calloc(1,sizeof(char*));
     dataset->obs_id[0]=NULL;  // for realloc to work as malloc on first loop.
+    V=matrix_new(1,ncols);
     while (fgets(s, sizeof(s), fichier_data) != NULL) {
 	if(nrows>=MAX_ROWS) {
 	    fprintf(stderr,"Error: too many lines in data file (max %d)\n",MAX_ROWS);
@@ -424,8 +424,9 @@ int read_dataset(const t_fname fname, t_dataset *dataset) {
 	// ptr shift: eliminates the first label from s before reading numerical values
 	s[strlen(s)-1]='\0';  // remove NL at the end
 	ptr=s+strlen(row_label);
-	if (str2hvector(ptr, V)==0) {
+	if (matrix_str2hvector(ptr, V)!=ncols) {
 	    fprintf(stderr, "Error: reading line %d of input file %s.\n",nrows, fname);
+	    fprintf(stderr, "       number of values should be %d.\n",ncols);
 		 exit(8);
 	    }
 	    matrix_add_rows(dataset->data,1);
@@ -439,10 +440,11 @@ int read_dataset(const t_fname fname, t_dataset *dataset) {
     return 0;
  }
 /**********************************************************************
- * str2hvector: converts the string into a vector of N=v->nrows reals
- *		argument v already exists, and is just filled in
+ * matrix_str2hvector: converts the string into a vector of N=v->nrows 
+ *	floats. If matrix argument v doesn't exist, it is allocated
+ *	If v already exists, it is just filled in.
  **********************************************************************/
-int str2hvector(char *linestr, t_matrix *v) {
+int matrix_str2hvector(char *linestr, t_matrix *v) {
     int	    nbval,i;
     char    **valuestrings;  // arrays of number strings
     valuestrings=tokenize(linestr,&nbval);
