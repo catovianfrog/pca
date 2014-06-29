@@ -51,4 +51,3 @@ v2.1 --
     to read headers. v2.1.2 is the first fully working version (without memory
     leaks) that uses _libstring.c_.
 
-
