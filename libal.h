@@ -6,8 +6,8 @@
 #ifndef __libal_h__
 #define __libal_h__
 
-#define MAX_ITERATION  1e+5	    // max number of iterations for eigenvalues
-#define PRECISION      1e-6	    // stop iterations when residue < PRECISION
+#define MAX_ITERATION  1e+4	    // max number of iterations for eigenvalues
+#define PRECISION      1e-8	    // stop iterations when residue < PRECISION
 #define TAG_LENGTH	20		// length of labels / tags
 typedef	struct  {   int	    nrows;
 		    int	    ncols;
