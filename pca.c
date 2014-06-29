@@ -432,8 +432,6 @@ int read_dataset(const t_fname fname, t_dataset *dataset) {
 	    matrix_set_block(V,dataset->data,nrows,0);
 	nrows++;
     }
-    // A longer title should be planned. 
-    // For the moment long title=short title (Headers[0])
     strcpy(dataset->title,dataset->headers[0]);
     dataset->n_obs=nrows;
     matrix_free(V);

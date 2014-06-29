@@ -17,8 +17,6 @@
 #include "libal.h"
 
 //---------------------------------------------------------------------
-#define MAX_ITERATION  1e+4	    // max number of iterations for eigenvalues
-#define PRECISION      1e-8	    // stop iterations when residue < PRECISION
 #define LINE_LENGTH    1000	    // max length of data file lines
 #define NAME_LENGTH    255	    // length of strings & labels
 #define DOUBLE_FORMAT  "%9.3f"	    // default printing format for double precision floats
