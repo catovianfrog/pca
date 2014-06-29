@@ -422,8 +422,8 @@ int read_dataset(const t_fname fname, t_dataset *dataset) {
 	dataset->obs_id[nrows]=malloc(strlen(row_label)+1);
 	strcpy(dataset->obs_id[nrows],row_label);
 	// ptr shift: eliminates the first label from s before reading numerical values
-	ptr=s+strlen(row_label);
 	s[strlen(s)-1]='\0';  // remove NL at the end
+	ptr=s+strlen(row_label);
 	if (str2hvector(ptr, V)==0) {
 	    fprintf(stderr, "Error: reading line %d of input file %s.\n",nrows, fname);
 		 exit(8);
@@ -443,34 +443,15 @@ int read_dataset(const t_fname fname, t_dataset *dataset) {
  *		argument v already exists, and is just filled in
  **********************************************************************/
 int str2hvector(char *linestr, t_matrix *v) {
-    char s[LINE_LENGTH];// string used to build the number
-    int		 j;     // indice de position du caractère numérique dans le nombre      
-    int		 k;	// indice de position dans la chaine
-    int		 l;     // indice de position dans le vecteur horizontal
-    
-    s[0]='\0'; 
-    k=0;                        
-    l=0;
-    while(k<LINE_LENGTH && l<v->ncols){
-        j=0;
-        if (linestr[k]=='\0') break;
-        while (linestr[k]==' ' || linestr[k]=='\t') k++; /* skip leading spaces */
-        while (linestr[k]!=' ' && linestr[k]!='\t' && linestr[k]!='\0') /* read next float*/
-        {
-    		 s[j]=linestr[k];
-    		 k++;
-    		 j++;
-        }
-        s[j]='\0';
-        if (sscanf(s, "%lf", &v->data[l]) != 1) {
-// ATTENTION, if non digit characters follow digits, their are ignored.
-		     printf("Error: %s is not a floating point number.\n", s);
-    		 return(1);
-        }
-	//printf("s: %s\tx:%4.2f\n",s,v->data[l]);       //for debug
-        l++;
-    };
-if(l==v->ncols) return l;
-return 0;  /* the line doesn't have enough float values */
+    int	    nbval,i;
+    char    **valuestrings;  // arrays of number strings
+    valuestrings=tokenize(linestr,&nbval);
+    v->ncols=nbval;
+    for(i=0;i<nbval;i++) {
+	if (sscanf(valuestrings[i], "%lf", &v->data[i]) != 1) v->data[i]=nan(""); 
+	free(valuestrings[i]);
+    }
+    free(valuestrings);
+    return nbval;
 }
          
