@@ -4,7 +4,7 @@
 #    	G N U P L O T
 #    	Version 4.4 patchlevel 3
 #    	last modified March 2011
-#    	System: Linux 3.2.0-53-generic-pae
+#    	System: Linux 3.2.0-64-generic-pae
 #    
 #    	Copyright (C) 1986-1993, 1998, 2004, 2007-2010
 #    	Thomas Williams, Colin Kelley and many others
@@ -35,7 +35,7 @@ set boxwidth
 set style fill  empty border
 set style rectangle back fc lt -3 fillstyle   solid 1.00 border lt -1
 set style circle radius graph 0.02, first 0, 0 
-set dummy x,y
+set dummy t,y
 set format x "% g"
 set format y "% g"
 set format x2 "% g"
@@ -59,7 +59,7 @@ set offsets 0, 0, 0, 0
 set pointsize 1
 set pointintervalbox 1
 set encoding default
-unset polar
+set polar
 unset parametric
 unset decimalsign
 set view 60, 30, 1, 1
@@ -91,35 +91,37 @@ set mztics default
 set mx2tics default
 set my2tics default
 set mcbtics default
-set noxtics
-set noytics
+set xtics border in scale 1,0.5 mirror norotate  offset character 0, 0, 0
+set xtics autofreq  norangelimit
+set ytics border in scale 1,0.5 mirror norotate  offset character 0, 0, 0
+set ytics autofreq  norangelimit
 set ztics border in scale 1,0.5 nomirror norotate  offset character 0, 0, 0
 set ztics autofreq  norangelimit
 set nox2tics
 set noy2tics
 set cbtics border in scale 1,0.5 mirror norotate  offset character 0, 0, 0
 set cbtics autofreq  norangelimit
-set title "ACP :  Depenses de l'Etat - 1872-1971" 
+set title "" 
 set title  offset character 0, 0, 0 font "" norotate
 set timestamp bottom 
 set timestamp "" 
 set timestamp  offset character 0, 0, 0 font "" norotate
 set rrange [ * : * ] noreverse nowriteback  # (currently [8.98847e+307:-8.98847e+307] )
-set trange [ * : * ] noreverse nowriteback  # (currently [-5.00000:5.00000] )
+set trange [ * : * ] noreverse nowriteback  # (currently [0.00000:6.28319] )
 set urange [ * : * ] noreverse nowriteback  # (currently [-10.0000:10.0000] )
 set vrange [ * : * ] noreverse nowriteback  # (currently [-10.0000:10.0000] )
 set xlabel "" 
 set xlabel  offset character 0, 0, 0 font "" textcolor lt -1 norotate
 set x2label "" 
 set x2label  offset character 0, 0, 0 font "" textcolor lt -1 norotate
-set xrange [ * : * ] noreverse nowriteback  # (currently [-4.00000:3.50000] )
-set x2range [ * : * ] noreverse nowriteback  # (currently [-4.00000:3.50000] )
+set xrange [ * : * ] noreverse nowriteback  # (currently [-1.00000:1.00000] )
+set x2range [ * : * ] noreverse nowriteback  # (currently [-1.00000:1.00000] )
 set ylabel "" 
 set ylabel  offset character 0, 0, 0 font "" textcolor lt -1 rotate by -270
 set y2label "" 
 set y2label  offset character 0, 0, 0 font "" textcolor lt -1 rotate by -270
-set yrange [ * : * ] noreverse nowriteback  # (currently [-3.50000:3.00000] )
-set y2range [ * : * ] noreverse nowriteback  # (currently [-3.50000:3.00000] )
+set yrange [ * : * ] noreverse nowriteback  # (currently [-1.00000:1.00000] )
+set y2range [ * : * ] noreverse nowriteback  # (currently [-0.899887:0.899887] )
 set zlabel "" 
 set zlabel  offset character 0, 0, 0 font "" textcolor lt -1 norotate
 set zrange [ * : * ] noreverse nowriteback  # (currently [-10.0000:10.0000] )
@@ -143,5 +145,7 @@ set loadpath
 set fontpath 
 set fit noerrorvariables
 GNUTERM = "wxt"
-plot [-4:3.5] [-3.5:3]  "pc.dat" index 0 using 4:3:1 with labels title "" font "Times, 7"
+x = 1
+t = 1
+plot [][-1:1] 0.9
 #    EOF

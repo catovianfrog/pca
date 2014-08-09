@@ -98,8 +98,6 @@ int main( int argc, char *argv[]) {        // args not used so far
     pca->princ_comp=matrix_prod(dataset->data_cr,pca->e_vectors);
     print_pca_results(stdout,pca);
 
-
-    
 error:
     matrix_free(pca->princ_comp);
     matrix_free(pca->e_vectors);
@@ -400,7 +398,7 @@ int read_dataset(const t_fname fname, t_dataset *dataset) {
     s[strlen(s)-1]='\0';  // remove NL at the end
     // read first line = name + headers
     dataset->headers=tokenize(s,&ncols);  // ncols= nb parameters+1 (title)
-    ncols--;	// parameter is dataset title TODO this needs to be changed
+    ncols--;	// parameter is dataset title 
     dataset->data=matrix_new(0,ncols);
     dataset->ncols=ncols;
     nrows=0;
